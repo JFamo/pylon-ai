@@ -68,6 +68,9 @@ class Queue:
 		# Update count
 		self.count += 1
 
+		# Debug
+		print(self)
+
 	def dequeue(self):
 
 		# Check list size, cases for last removal and empty list

@@ -15,6 +15,7 @@ class Pylon_AI(sc2.BotAI):
 	hr_expansionTime = 240 # Expansion time in seconds
 	hr_workersPerBase = 22
 	hr_zealotratio = 0.5
+	hr_buildDistance = 15.0
 	hr_buildPriorities = {"PROBE": 1, "NEXUS": 10, "PYLON": 4, "GATEWAY": 3, "ZEALOT": 1, "ASSIMILATOR": 2} # This should be situational, generalize for now
 
 	# Local Vars
@@ -59,10 +60,13 @@ class Pylon_AI(sc2.BotAI):
 				self.buildPlans.enqueue(ZEALOT, self.hr_buildPriorities["ZEALOT"])
 
 		# Assess assimilator build by checking for empty gas by Nexus
+		openGeyserCount = 0
 		for nexus in self.units(NEXUS).ready:
-			vespenes = self.state.vespene_geyser.closer_than(25.0, nexus)
-			if(len(vespenes) > self.buildPlans.countOf(ASSIMILATOR)):
-				self.buildPlans.enqueue(ASSIMILATOR, self.hr_buildPriorities["ASSIMILATOR"])
+			for vespene in self.state.vespene_geyser.closer_than(25.0, nexus):
+				if not self.units(ASSIMILATOR).closer_than(1.0, vespene).exists:
+					openGeyserCount += 1
+		if(openGeyserCount > self.buildPlans.countOf(ASSIMILATOR)):
+			self.buildPlans.enqueue(ASSIMILATOR, self.hr_buildPriorities["ASSIMILATOR"])
 
 	# Generic method to handle dequeuing unit from build plans
 	async def build_unit(self, unit):
@@ -87,7 +91,7 @@ class Pylon_AI(sc2.BotAI):
 	async def build_pylons(self):
 			nexuses = self.units(NEXUS).ready
 			if nexuses.exists:
-				await self.build(PYLON, near=self.main_base_ramp.top_center)
+				await self.build(PYLON, near=self.main_base_ramp.top_center.random_on_distance(self.hr_buildDistance))
 			elif not self.buildPlans.contains(NEXUS):
 				self.buildPlans.enqueue(NEXUS, self.hr_buildPriorities["NEXUS"])
 				print(self.buildPlans)
