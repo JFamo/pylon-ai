@@ -5,7 +5,9 @@ from sc2.constants import NEXUS, PROBE, PYLON, GATEWAY, ZEALOT
 
 class Pylon_AI(sc2.BotAI):
 
-	supplyTrigger = 5
+	# Heuristics
+	hr_supplyTrigger = 5
+	hr_gatewayMultiplier = 3
 
 	async def on_step(self, iteration):
 		await self.distribute_workers()
@@ -25,7 +27,7 @@ class Pylon_AI(sc2.BotAI):
 				await self.do(gateway.train(ZEALOT))
 
 	async def build_pylons(self):
-		if self.supply_left < self.supplyTrigger and not self.already_pending(PYLON):
+		if self.supply_left < self.hr_supplyTrigger and not self.already_pending(PYLON):
 			nexuses = self.units(NEXUS).ready
 			if nexuses.exists:
 				if self.can_afford(PYLON):
@@ -34,7 +36,7 @@ class Pylon_AI(sc2.BotAI):
 	async def build_gateways(self):
 		pylons = self.units(PYLON).ready
 		if pylons.exists:
-			if self.can_afford(GATEWAY):
+			if self.can_afford(GATEWAY) and len(self.units(GATEWAY)) < (self.hr_gatewayMultiplier * len(self.units(NEXUS))):
 				await self.build(GATEWAY, near=pylons.first)
 
 run_game(maps.get("TritonLE"), [
