@@ -32,12 +32,12 @@ class Pylon_AI(sc2.BotAI):
 				await self.build_unit(self.buildPlans.dequeue())
 
 	def getUnitCount(self, unit):
-		return len(self.units(unit)) + self.buildPlans.countOf(unit)
+		return self.units(unit).amount + self.buildPlans.countOf(unit)
 
 	async def assess_builds(self):
 
 		# Assess workers using multiplier by num of bases
-		if self.getUnitCount(PROBE) < self.hr_workersPerBase * len(self.units(NEXUS)):
+		if self.getUnitCount(PROBE) < self.hr_workersPerBase * self.units(NEXUS).amount:
 			self.buildPlans.enqueue(PROBE, self.hr_buildPriorities["PROBE"])
 
 		# Assess pylons using heurustic threshold approaching max supply
@@ -47,7 +47,7 @@ class Pylon_AI(sc2.BotAI):
 		# Assess gateways checking for complete pylon and using heuristic threshold based on num of bases
 		pylons = self.units(PYLON).ready
 		if pylons.exists:
-			if self.getUnitCount(GATEWAY) < (self.hr_gatewayMultiplier * len(self.units(NEXUS))):
+			if self.getUnitCount(GATEWAY) < (self.hr_gatewayMultiplier * self.units(NEXUS).amount):
 				self.buildPlans.enqueue(GATEWAY, self.hr_buildPriorities["GATEWAY"])
 
 		# Assess expansion by checking heuristic predictive expansion time
@@ -77,7 +77,7 @@ class Pylon_AI(sc2.BotAI):
 		if(unit == PYLON):
 			await  self.build_pylons()
 		if(unit == GATEWAY):
-			await self.build(GATEWAY, near=self.units(PYLON).ready.first)
+			await self.build(GATEWAY, near=self.units(PYLON).ready.random)
 		if(unit == NEXUS):
 			await self.expand_now()
 		if(unit == ZEALOT):
