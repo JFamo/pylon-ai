@@ -1,4 +1,6 @@
 import sc2
+import random
+
 from queue import *
 from sc2 import run_game, maps, Race, Difficulty
 from sc2.player import Bot, Computer
@@ -14,9 +16,12 @@ class Pylon_AI(sc2.BotAI):
 	hr_gatewayMultiplier = 2
 	hr_expansionTime = 240 # Expansion time in seconds
 	hr_workersPerBase = 22
+	hr_unitRatio = {}
 	hr_unitRatio[ZEALOT] = 0.25
 	hr_unitRatio[STALKER] = 0.40
 	hr_buildDistance = 15.0
+	hr_attackSupply = 50
+	hr_defendSupply = 10
 	hr_buildPriorities = {"PROBE": 1, "NEXUS": 10, "PYLON": 4, "GATEWAY": 3, "ZEALOT": 1, "STALKER": 1, "ASSIMILATOR": 2, "CYBERNETICSCORE": 5, "FORGE": 5} # This should be situational, generalize for now
 
 	# Local Vars
@@ -26,6 +31,7 @@ class Pylon_AI(sc2.BotAI):
 		await self.distribute_workers()
 		await self.assess_builds()
 		await self.attempt_build()
+		await self.attack()
 
 	async def attempt_build(self):
 		if(len(self.buildPlans) > 0):
@@ -84,6 +90,10 @@ class Pylon_AI(sc2.BotAI):
 			if self.getUnitCount(FORGE) < 1:
 				self.buildPlans.enqueue(FORGE, self.hr_buildPriorities["FORGE"])
 
+		# Escape case for misplaced pylons
+		if self.minerals > 600:
+			self.buildPlans.enqueue(PYLON, 100)
+
 	# Generic method to handle dequeuing unit from build plans
 	async def build_unit(self, unit):
 		if(unit == PROBE):
@@ -131,8 +141,32 @@ class Pylon_AI(sc2.BotAI):
 				if not self.units(ASSIMILATOR).closer_than(1.0, vespene).exists:
 					await self.do(worker.build(ASSIMILATOR, vespene))
 
+	# Method to identify an attacking target
+	def find_target(self, state):
+		if len(self.known_enemy_units) > 0:
+			return random.choice(self.known_enemy_units)
+		elif len(self.known_enemy_structures) > 0:
+			return random.choice(self.known_enemy_structures)
+		else:
+			return self.enemy_start_locations[0]
+
+	# Method to make attack decisions
+	async def attack(self):
+		if self.supply_army > self.hr_attackSupply:
+			for s in self.units(STALKER).idle:
+				await self.do(s.attack(self.find_target(self.state)))
+			for s in self.units(ZEALOT).idle:
+				await self.do(s.attack(self.find_target(self.state)))
+
+		elif self.supply_army > self.hr_defendSupply:
+			if len(self.known_enemy_units) > 0:
+				for s in self.units(STALKER).idle:
+					await self.do(s.attack(random.choice(self.known_enemy_units)))
+				for s in self.units(ZEALOT).idle:
+					await self.do(s.attack(random.choice(self.known_enemy_units)))
+
 run_game(maps.get("TritonLE"), [
 		Bot(Race.Protoss, Pylon_AI()),
-		Computer(Race.Terran, Difficulty.Easy)
+		Computer(Race.Terran, Difficulty.Medium)
 	], realtime=True)
 
