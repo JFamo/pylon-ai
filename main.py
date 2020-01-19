@@ -11,7 +11,7 @@ class Pylon_AI(sc2.BotAI):
 	hr_gatewayMultiplier = 3
 	hr_expansionTime = 240 # Expansion time in seconds
 	hr_workersPerBase = 24
-	hr_buildPriorities = {"PROBE": 0, "NEXUS": 10, "PYLON": 3, "GATEWAY": 2, "ZEALOT": 1} # This should be situational, generalize for now
+	hr_buildPriorities = {"PROBE": 1, "NEXUS": 10, "PYLON": 4, "GATEWAY": 3, "ZEALOT": 2} # This should be situational, generalize for now
 
 	# Local Vars
 	buildPlans = Queue()
@@ -22,24 +22,31 @@ class Pylon_AI(sc2.BotAI):
 		await self.attempt_build()
 
 	async def attempt_build(self):
+		print(self.can_afford(self.buildPlans.peek()))
 		if(self.can_afford(self.buildPlans.peek())):
-			await self.build_unit(self.buildPlans.dequeue())
+			thisUnit = self.buildPlans.dequeue()
+			print("trying build unit : " + thisUnit)
+			await self.build_unit(thisUnit)
 
 	async def assess_builds(self):
 		# Assess workers using multiplier by num of bases
 		if len(self.units(PROBE)) + self.buildPlans.countOf(PROBE) < self.hr_workersPerBase * len(self.units(NEXUS)):
-			self.buildPlans.enqueue(PROBE)
+			self.buildPlans.enqueue(PROBE, self.hr_buildPriorities["PROBE"])
+			print(self.buildPlans)
 		# Assess pylons using heurustic threshold approaching max supply
 		if self.supply_left < self.hr_supplyTrigger and not self.already_pending(PYLON) and not self.buildPlans.contains(PYLON):
-			self.buildPlans.enqueue(PYLON)
+			self.buildPlans.enqueue(PYLON, self.hr_buildPriorities["PYLON"])
+			print(self.buildPlans)
 		# Assess gateways checking for complete pylon and using heuristic threshold based on num of bases
 		pylons = self.units(PYLON).ready
 		if pylons.exists:
 			if len(self.units(GATEWAY)) + self.buildPlans.countOf(GATEWAY) < (self.hr_gatewayMultiplier * len(self.units(NEXUS))):
-				self.buildPlans.enqueue(GATEWAY)
+				self.buildPlans.enqueue(GATEWAY, self.hr_buildPriorities["GATEWAY"])
+				print(self.buildPlans)
 		# Assess expansion by checking heuristic predictive expansion time
 		if (self.time / self.hr_expansionTime) > len(self.units(NEXUS)) + self.buildPlans.countOf(NEXUS):
-			self.buildPlans.prioritize(NEXUS)
+			self.buildPlans.enqueue(NEXUS, self.hr_buildPriorities["NEXUS"])
+			print(self.buildPlans)
 
 	# Generic method to handle dequeuing unit from build plans
 	async def build_unit(self, unit):
@@ -58,7 +65,7 @@ class Pylon_AI(sc2.BotAI):
 			if nexuses.exists:
 				await self.build(PYLON, near=nexuses.first)
 			elif not self.buildPlans.contains(NEXUS):
-				self.buildPlans.enqueue(NEXUS)
+				self.buildPlans.enqueue(NEXUS, self.hr_buildPriorities["NEXUS"])
 
 run_game(maps.get("TritonLE"), [
 		Bot(Race.Protoss, Pylon_AI()),

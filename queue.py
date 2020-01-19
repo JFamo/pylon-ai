@@ -44,26 +44,23 @@ class Queue:
 		# Case for first node
 		if self.count == 0:
 			self.tail = newNode
+			self.head = newNode
+			newNode.next = None
 		else:
-			newNode.next = self.head
-		
-		self.head = newNode
+			thisNode = self.head
+			while(thisNode.next):
+				if(thisNode.next.priority > newNode.priority):
+					newNode.next = thisNode.next
+					thisNode.next = newNode
+				else:
+					thisNode = thisNode.next
+			if(self.tail.priority < newNode.priority):
+				self.tail = newNode
+				newNode.next = None
+				thisNode.next = newNode
 
 		# Update count
 		self.count += 1
-
-		# Move up based on priority
-		while(newNode.next):
-			if(newNode.next.priority < newNode.priority):
-				middleNode = newNode.next
-				newNode.next = middleNode.next
-				middleNode.next = newNode
-
-		# Handle last node
-		if(self.tail.priority < newNode.priority):
-				self.tail.next = newNode
-				self.tail = newNode
-				newNode.next = None
 
 	def dequeue(self):
 
