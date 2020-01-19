@@ -11,6 +11,7 @@ class Pylon_AI(sc2.BotAI):
 	hr_gatewayMultiplier = 3
 	hr_expansionTime = 240 # Expansion time in seconds
 	hr_workersPerBase = 24
+	hr_zealotratio = 0.5
 	hr_buildPriorities = {"PROBE": 0, "NEXUS": 10, "PYLON": 3, "GATEWAY": 2, "ZEALOT": 1} # This should be situational, generalize for now
 
 	# Local Vars
@@ -28,7 +29,7 @@ class Pylon_AI(sc2.BotAI):
 
 	async def assess_builds(self):
 		# Assess workers using multiplier by num of bases
-		if len(self.units(PROBE)) + self.buildPlans.countOf(PROBE) < self.hr_workersPerBase * len(self.units(NEXUS)):
+		if getUnitCount(PROBE) < self.hr_workersPerBase * len(self.units(NEXUS)):
 			self.buildPlans.enqueue(PROBE, self.hr_buildPriorities["PROBE"])
 			print(self.buildPlans)
 		# Assess pylons using heurustic threshold approaching max supply
@@ -38,24 +39,33 @@ class Pylon_AI(sc2.BotAI):
 		# Assess gateways checking for complete pylon and using heuristic threshold based on num of bases
 		pylons = self.units(PYLON).ready
 		if pylons.exists:
-			if len(self.units(GATEWAY)) + self.buildPlans.countOf(GATEWAY) < (self.hr_gatewayMultiplier * len(self.units(NEXUS))):
+			if getUnitCount(GATEWAY) < (self.hr_gatewayMultiplier * len(self.units(NEXUS))):
 				self.buildPlans.enqueue(GATEWAY, self.hr_buildPriorities["GATEWAY"])
 				print(self.buildPlans)
 		# Assess expansion by checking heuristic predictive expansion time
-		if (self.time / self.hr_expansionTime) > len(self.units(NEXUS)) + self.buildPlans.countOf(NEXUS):
+		if (self.time / self.hr_expansionTime) > getUnitCount(NEXUS):
 			self.buildPlans.enqueue(NEXUS, self.hr_buildPriorities["NEXUS"])
 			print(self.buildPlans)
+		# Assess zealot build by checking heuristic for army composition
+		if (self._game_data.units[ZEALOT]._proto.food_required * getUnitCount(ZEALOT)) / self.supply_cap < self.hr_zealotratio :
+			self.buildPlans.enqueue(ZEALOT, self.hr_buildPriorities["ZEALOT"])
+			print(self.buildPlans)
+
+	def getUnitCount(self, unit):
+		return len(self.units(unit)) + self.buildPlans.countOf(unit)
 
 	# Generic method to handle dequeuing unit from build plans
 	async def build_unit(self, unit):
 		if(unit == PROBE):
-			await self.do(self.units(NEXUS).ready.first.train(PROBE))
+			await self.do(self.units(NEXUS).ready.noqueue.first.train(PROBE))
 		if(unit == PYLON):
 			await  self.build_pylons()
 		if(unit == GATEWAY):
 			await self.build(GATEWAY, near=self.units(PYLON).ready.first)
 		if(unit == NEXUS):
 			await self.expand_now()
+		if(unit == ZEALOT):
+			await self.do(self.units(GATEWAY).ready.noqueue.first.train(ZEALOT))
 
 	# Method to place and build pylons or nexus if required
 	async def build_pylons(self):
