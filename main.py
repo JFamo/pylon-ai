@@ -2,7 +2,7 @@ import sc2
 from queue import *
 from sc2 import run_game, maps, Race, Difficulty
 from sc2.player import Bot, Computer
-from sc2.constants import NEXUS, PROBE, PYLON, GATEWAY, ZEALOT, ASSIMILATOR
+from sc2.constants import NEXUS, PROBE, PYLON, GATEWAY, ZEALOT, ASSIMILATOR, CYBERNETICSCORE, FORGE, STALKER
 from sc2.game_data import AbilityData, GameData
 from sc2.unit import Unit
 from sc2.units import Units
@@ -14,9 +14,10 @@ class Pylon_AI(sc2.BotAI):
 	hr_gatewayMultiplier = 2
 	hr_expansionTime = 240 # Expansion time in seconds
 	hr_workersPerBase = 22
-	hr_zealotratio = 0.5
+	hr_unitRatio[ZEALOT] = 0.25
+	hr_unitRatio[STALKER] = 0.40
 	hr_buildDistance = 15.0
-	hr_buildPriorities = {"PROBE": 1, "NEXUS": 10, "PYLON": 4, "GATEWAY": 3, "ZEALOT": 1, "ASSIMILATOR": 2} # This should be situational, generalize for now
+	hr_buildPriorities = {"PROBE": 1, "NEXUS": 10, "PYLON": 4, "GATEWAY": 3, "ZEALOT": 1, "STALKER": 1, "ASSIMILATOR": 2, "CYBERNETICSCORE": 5, "FORGE": 5} # This should be situational, generalize for now
 
 	# Local Vars
 	buildPlans = Queue()
@@ -56,8 +57,13 @@ class Pylon_AI(sc2.BotAI):
 
 		# Assess zealot build by checking heuristic for army composition
 		if self.units(GATEWAY).ready.exists:
-			if (self._game_data.units[ZEALOT.value]._proto.food_required * self.getUnitCount(ZEALOT)) / self.supply_cap < self.hr_zealotratio :
+			if (self._game_data.units[ZEALOT.value]._proto.food_required * self.getUnitCount(ZEALOT)) / self.supply_cap < self.hr_unitRatio[ZEALOT] :
 				self.buildPlans.enqueue(ZEALOT, self.hr_buildPriorities["ZEALOT"])
+
+		# Assess stalker build by checking heuristic for army composition
+		if self.units(GATEWAY).ready.exists and self.units(CYBERNETICSCORE).ready.exists:
+			if (self._game_data.units[STALKER.value]._proto.food_required * self.getUnitCount(STALKER)) / self.supply_cap < self.hr_unitRatio[STALKER] :
+				self.buildPlans.enqueue(STALKER, self.hr_buildPriorities["STALKER"])
 
 		# Assess assimilator build by checking for empty gas by Nexus
 		openGeyserCount = 0
@@ -67,6 +73,16 @@ class Pylon_AI(sc2.BotAI):
 					openGeyserCount += 1
 		if(openGeyserCount > self.buildPlans.countOf(ASSIMILATOR)):
 			self.buildPlans.enqueue(ASSIMILATOR, self.hr_buildPriorities["ASSIMILATOR"])
+
+		# Assess cybernetics core build
+		if self.units(GATEWAY).ready.exists:
+			if self.getUnitCount(CYBERNETICSCORE) < 1:
+				self.buildPlans.enqueue(CYBERNETICSCORE, self.hr_buildPriorities["CYBERNETICSCORE"])
+
+		# Assess forge build
+		if self.units(FORGE).ready.exists:
+			if self.getUnitCount(FORGE) < 1:
+				self.buildPlans.enqueue(FORGE, self.hr_buildPriorities["FORGE"])
 
 	# Generic method to handle dequeuing unit from build plans
 	async def build_unit(self, unit):
@@ -84,8 +100,16 @@ class Pylon_AI(sc2.BotAI):
 			gateways = self.units(GATEWAY).ready.idle
 			if gateways:
 				await self.do(gateways.first.train(ZEALOT))
+		if(unit == STALKER):
+			gateways = self.units(GATEWAY).ready.idle
+			if gateways:
+				await self.do(gateways.first.train(STALKER))
 		if(unit == ASSIMILATOR):
 			await self.build_assimilator()
+		if(unit == CYBERNETICSCORE):
+			await self.build(CYBERNETICSCORE, near=self.units(PYLON).ready.random)
+		if(unit == FORGE):
+			await self.build(FORGE, near=self.units(PYLON).ready.random)
 
 	# Method to place and build pylons or nexus if required
 	async def build_pylons(self):
