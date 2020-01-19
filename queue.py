@@ -1,8 +1,9 @@
 class Node:
 
-	def __init__(self, value):
+	def __init__(self, value, priority):
 		self.value = value  
 		self.next = None 
+		self.priority = priority
 	
 	def __str__(self):
 		return "Node({})".format(self.value) 
@@ -35,27 +36,10 @@ class Queue:
 		else :
 			return False
 
-	def enqueue(self, x):
+	def enqueue(self, x, priority):
 
 		# Create node
-		newNode = Node(x)
-
-		# Case for first node
-		if self.count == 0:
-			self.head = newNode
-		else:
-			self.tail.next = newNode
-		
-		self.tail = newNode
-
-		# Update count
-		self.count += 1
-
-	# Need to update this for dynamic genetic algorithm ranking and reprioritizing
-	def prioritize(self, x):
-
-		# Create node
-		newNode = Node(x)
+		newNode = Node(x, priority)
 
 		# Case for first node
 		if self.count == 0:
@@ -67,6 +51,19 @@ class Queue:
 
 		# Update count
 		self.count += 1
+
+		# Move up based on priority
+		while(newNode.next):
+			if(newNode.next.priority < newNode.priority):
+				middleNode = newNode.next
+				newNode.next = middleNode.next
+				middleNode.next = newNode
+
+		# Handle last node
+		if(self.tail.priority < newNode.priority):
+				self.tail.next = newNode
+				self.tail = newNode
+				newNode.next = None
 
 	def dequeue(self):
 
@@ -80,8 +77,15 @@ class Queue:
 			self.count = 0
 			return returnValue
 		else:
-			returnValue = self.head.value
-			self.head = self.head.next
+			returnValue = self.tail.value
+			thisNode = self.head
+			while(thisNode.next):
+				if(thisNode.next == self.tail):
+					self.tail = thisNode
+					thisNode.next = None
+					break
+				else:
+					thisNode = thisNode.next
 			self.count -= 1
 			return returnValue
 
@@ -90,36 +94,11 @@ class Queue:
 		if self.count == 0 :
 			return None
 		else:
-			return self.head.value
+			return self.tail.value
 
 	def __len__(self):
 
 		return self.count
-
-	def reverse(self): 
-
-		# We do not need to reverse length 1 or less
-		if self.count > 1 :
-
-			# Save all elements to list
-			nodeList = []
-			thisNode = self.head
-
-			while(thisNode.next):
-				nodeList.append(thisNode)
-				if thisNode.next == self.tail:
-					nodeList.append(self.tail)
-					break
-				thisNode = thisNode.next
-
-			# Iterate and re-build
-			for index in range(self.count - 1, -1, -1):
-				nodeList[index].next = nodeList[index-1]
-
-			# Set new head and tail
-			self.tail = nodeList[0]
-			self.tail.next = None
-			self.head = nodeList[self.count - 1]
 
 	def contains(self, item):
 
