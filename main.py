@@ -3,6 +3,7 @@ from queue import *
 from sc2 import run_game, maps, Race, Difficulty
 from sc2.player import Bot, Computer
 from sc2.constants import NEXUS, PROBE, PYLON, GATEWAY, ZEALOT
+from sc2.game_data import AbilityData, GameData
 
 class Pylon_AI(sc2.BotAI):
 
@@ -27,37 +28,40 @@ class Pylon_AI(sc2.BotAI):
 			if(self.can_afford(self.buildPlans.peek())):
 				await self.build_unit(self.buildPlans.dequeue())
 
+	def getUnitCount(self, unit):
+		return len(self.units(unit)) + self.buildPlans.countOf(unit)
+
 	async def assess_builds(self):
+
 		# Assess workers using multiplier by num of bases
-		if getUnitCount(PROBE) < self.hr_workersPerBase * len(self.units(NEXUS)):
+		if self.getUnitCount(PROBE) < self.hr_workersPerBase * len(self.units(NEXUS)):
 			self.buildPlans.enqueue(PROBE, self.hr_buildPriorities["PROBE"])
-			print(self.buildPlans)
+
 		# Assess pylons using heurustic threshold approaching max supply
 		if self.supply_left < self.hr_supplyTrigger and not self.already_pending(PYLON) and not self.buildPlans.contains(PYLON):
 			self.buildPlans.enqueue(PYLON, self.hr_buildPriorities["PYLON"])
-			print(self.buildPlans)
+
 		# Assess gateways checking for complete pylon and using heuristic threshold based on num of bases
 		pylons = self.units(PYLON).ready
 		if pylons.exists:
-			if getUnitCount(GATEWAY) < (self.hr_gatewayMultiplier * len(self.units(NEXUS))):
+			if self.getUnitCount(GATEWAY) < (self.hr_gatewayMultiplier * len(self.units(NEXUS))):
 				self.buildPlans.enqueue(GATEWAY, self.hr_buildPriorities["GATEWAY"])
-				print(self.buildPlans)
-		# Assess expansion by checking heuristic predictive expansion time
-		if (self.time / self.hr_expansionTime) > getUnitCount(NEXUS):
-			self.buildPlans.enqueue(NEXUS, self.hr_buildPriorities["NEXUS"])
-			print(self.buildPlans)
-		# Assess zealot build by checking heuristic for army composition
-		if (self._game_data.units[ZEALOT]._proto.food_required * getUnitCount(ZEALOT)) / self.supply_cap < self.hr_zealotratio :
-			self.buildPlans.enqueue(ZEALOT, self.hr_buildPriorities["ZEALOT"])
-			print(self.buildPlans)
 
-	def getUnitCount(self, unit):
-		return len(self.units(unit)) + self.buildPlans.countOf(unit)
+		# Assess expansion by checking heuristic predictive expansion time
+		if (self.time / self.hr_expansionTime) > self.getUnitCount(NEXUS):
+			self.buildPlans.enqueue(NEXUS, self.hr_buildPriorities["NEXUS"])
+
+		# Assess zealot build by checking heuristic for army composition
+		if self.units(GATEWAY).ready.exists:
+			if (self._game_data.units[ZEALOT]._proto.food_required * self.getUnitCount(ZEALOT)) / self.supply_cap < self.hr_zealotratio :
+				self.buildPlans.enqueue(ZEALOT, self.hr_buildPriorities["ZEALOT"])
 
 	# Generic method to handle dequeuing unit from build plans
 	async def build_unit(self, unit):
 		if(unit == PROBE):
-			await self.do(self.units(NEXUS).ready.noqueue.first.train(PROBE))
+			nexuses = self.units(NEXUS).ready.idle
+			if nexuses:
+				await self.do(nexuses.first.train(PROBE))
 		if(unit == PYLON):
 			await  self.build_pylons()
 		if(unit == GATEWAY):
@@ -65,7 +69,7 @@ class Pylon_AI(sc2.BotAI):
 		if(unit == NEXUS):
 			await self.expand_now()
 		if(unit == ZEALOT):
-			await self.do(self.units(GATEWAY).ready.noqueue.first.train(ZEALOT))
+			await self.do(self.units(GATEWAY).ready.idle.first.train(ZEALOT))
 
 	# Method to place and build pylons or nexus if required
 	async def build_pylons(self):
