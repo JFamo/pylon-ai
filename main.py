@@ -2,18 +2,20 @@ import sc2
 from queue import *
 from sc2 import run_game, maps, Race, Difficulty
 from sc2.player import Bot, Computer
-from sc2.constants import NEXUS, PROBE, PYLON, GATEWAY, ZEALOT
+from sc2.constants import NEXUS, PROBE, PYLON, GATEWAY, ZEALOT, ASSIMILATOR
 from sc2.game_data import AbilityData, GameData
+from sc2.unit import Unit
+from sc2.units import Units
 
 class Pylon_AI(sc2.BotAI):
 
 	# Heuristics
 	hr_supplyTrigger = 5
-	hr_gatewayMultiplier = 3
+	hr_gatewayMultiplier = 2
 	hr_expansionTime = 240 # Expansion time in seconds
 	hr_workersPerBase = 24
 	hr_zealotratio = 0.5
-	hr_buildPriorities = {"PROBE": 0, "NEXUS": 10, "PYLON": 3, "GATEWAY": 2, "ZEALOT": 1} # This should be situational, generalize for now
+	hr_buildPriorities = {"PROBE": 0, "NEXUS": 10, "PYLON": 4, "GATEWAY": 3, "ZEALOT": 1, "ASSIMILATOR": 2} # This should be situational, generalize for now
 
 	# Local Vars
 	buildPlans = Queue()
@@ -53,8 +55,12 @@ class Pylon_AI(sc2.BotAI):
 
 		# Assess zealot build by checking heuristic for army composition
 		if self.units(GATEWAY).ready.exists:
-			if (self._game_data.units[ZEALOT]._proto.food_required * self.getUnitCount(ZEALOT)) / self.supply_cap < self.hr_zealotratio :
+			if (self._game_data.units[ZEALOT.value]._proto.food_required * self.getUnitCount(ZEALOT)) / self.supply_cap < self.hr_zealotratio :
 				self.buildPlans.enqueue(ZEALOT, self.hr_buildPriorities["ZEALOT"])
+
+		# Assess assimilator build by checking for empty gas by Nexus
+		for nexus in self.units(NEXUS).ready:
+            vespene = self.state.vespene_geyser.closer_than(25.0, nexus)
 
 	# Generic method to handle dequeuing unit from build plans
 	async def build_unit(self, unit):
@@ -69,7 +75,9 @@ class Pylon_AI(sc2.BotAI):
 		if(unit == NEXUS):
 			await self.expand_now()
 		if(unit == ZEALOT):
-			await self.do(self.units(GATEWAY).ready.idle.first.train(ZEALOT))
+			gateways = self.units(GATEWAY).ready.idle
+			if gateways:
+				await self.do(gateways.first.train(ZEALOT))
 
 	# Method to place and build pylons or nexus if required
 	async def build_pylons(self):
