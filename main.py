@@ -5,8 +5,9 @@ from queue import *
 from sc2 import run_game, maps, Race, Difficulty
 from sc2.position import Point2
 from sc2.player import Bot, Computer
-from sc2.constants import NEXUS, PROBE, PYLON, GATEWAY, ZEALOT, ASSIMILATOR, CYBERNETICSCORE, FORGE, STALKER
+from sc2.constants import NEXUS, PROBE, PYLON, GATEWAY, ZEALOT, ASSIMILATOR, CYBERNETICSCORE, FORGE, STALKER, SENTRY
 from sc2.game_data import AbilityData, GameData
+from sc2.ids.unit_typeid import UnitTypeId
 from sc2.unit import Unit
 from sc2.units import Units
 
@@ -24,6 +25,7 @@ class Pylon_AI(sc2.BotAI):
 	hr_buildDistance = 10.0
 	hr_attackSupply = 50
 	hr_defendSupply = 10
+	hr_gasDetector = 15.0
 	hr_buildPriorities = {"PROBE": 1, "NEXUS": 10, "PYLON": 4, "GATEWAY": 3, "ZEALOT": 1, "SENTRY": 1, "STALKER": 1, "ASSIMILATOR": 2, "CYBERNETICSCORE": 5, "FORGE": 5} # This should be situational, generalize for now
 
 	# Local Vars
@@ -145,7 +147,7 @@ class Pylon_AI(sc2.BotAI):
 	# Method to build gas on open geyser
 	async def build_assimilator(self):
 		for nexus in self.units(NEXUS).ready:
-			vespenes = self.state.vespene_geyser.closer_than(25.0, nexus)
+			vespenes = self.state.vespene_geyser.closer_than(self.hr_gasDetector, nexus)
 			for vespene in vespenes:
 				worker = self.select_build_worker(vespene.position)
 				if worker is None:
