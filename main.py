@@ -3,6 +3,7 @@ import random
 
 from queue import *
 from sc2 import run_game, maps, Race, Difficulty
+from sc2.position import Point2
 from sc2.player import Bot, Computer
 from sc2.constants import NEXUS, PROBE, PYLON, GATEWAY, ZEALOT, ASSIMILATOR, CYBERNETICSCORE, FORGE, STALKER
 from sc2.game_data import AbilityData, GameData
@@ -19,13 +20,15 @@ class Pylon_AI(sc2.BotAI):
 	hr_unitRatio = {}
 	hr_unitRatio[ZEALOT] = 0.25
 	hr_unitRatio[STALKER] = 0.40
-	hr_buildDistance = 15.0
+	hr_unitRatio[SENTRY] = 0.1
+	hr_buildDistance = 10.0
 	hr_attackSupply = 50
 	hr_defendSupply = 10
-	hr_buildPriorities = {"PROBE": 1, "NEXUS": 10, "PYLON": 4, "GATEWAY": 3, "ZEALOT": 1, "STALKER": 1, "ASSIMILATOR": 2, "CYBERNETICSCORE": 5, "FORGE": 5} # This should be situational, generalize for now
+	hr_buildPriorities = {"PROBE": 1, "NEXUS": 10, "PYLON": 4, "GATEWAY": 3, "ZEALOT": 1, "SENTRY": 1, "STALKER": 1, "ASSIMILATOR": 2, "CYBERNETICSCORE": 5, "FORGE": 5} # This should be situational, generalize for now
 
 	# Local Vars
 	buildPlans = Queue()
+	armyUnits = {UnitTypeId.ZEALOT, UnitTypeId.SENTRY, UnitTypeId.STALKER}
 
 	async def on_step(self, iteration):
 		await self.distribute_workers()
@@ -71,6 +74,11 @@ class Pylon_AI(sc2.BotAI):
 			if (self._game_data.units[STALKER.value]._proto.food_required * self.getUnitCount(STALKER)) / self.supply_cap < self.hr_unitRatio[STALKER] :
 				self.buildPlans.enqueue(STALKER, self.hr_buildPriorities["STALKER"])
 
+		# Assess sentry build by checking heuristic for army composition
+		if self.units(GATEWAY).ready.exists and self.units(CYBERNETICSCORE).ready.exists:
+			if (self._game_data.units[SENTRY.value]._proto.food_required * self.getUnitCount(SENTRY)) / self.supply_cap < self.hr_unitRatio[SENTRY] :
+				self.buildPlans.enqueue(SENTRY, self.hr_buildPriorities["SENTRY"])
+
 		# Assess assimilator build by checking for empty gas by Nexus
 		openGeyserCount = 0
 		for nexus in self.units(NEXUS).ready:
@@ -86,7 +94,7 @@ class Pylon_AI(sc2.BotAI):
 				self.buildPlans.enqueue(CYBERNETICSCORE, self.hr_buildPriorities["CYBERNETICSCORE"])
 
 		# Assess forge build
-		if self.units(FORGE).ready.exists:
+		if self.units(GATEWAY).ready.exists:
 			if self.getUnitCount(FORGE) < 1:
 				self.buildPlans.enqueue(FORGE, self.hr_buildPriorities["FORGE"])
 
@@ -114,6 +122,10 @@ class Pylon_AI(sc2.BotAI):
 			gateways = self.units(GATEWAY).ready.idle
 			if gateways:
 				await self.do(gateways.first.train(STALKER))
+		if(unit == SENTRY):
+			gateways = self.units(GATEWAY).ready.idle
+			if gateways:
+				await self.do(gateways.first.train(SENTRY))
 		if(unit == ASSIMILATOR):
 			await self.build_assimilator()
 		if(unit == CYBERNETICSCORE):
@@ -125,7 +137,7 @@ class Pylon_AI(sc2.BotAI):
 	async def build_pylons(self):
 			nexuses = self.units(NEXUS).ready
 			if nexuses.exists:
-				await self.build(PYLON, near=self.main_base_ramp.top_center.random_on_distance(self.hr_buildDistance))
+				await self.build(PYLON, near=self.generate_pylon_position())
 			elif not self.buildPlans.contains(NEXUS):
 				self.buildPlans.enqueue(NEXUS, self.hr_buildPriorities["NEXUS"])
 				print(self.buildPlans)
@@ -153,17 +165,29 @@ class Pylon_AI(sc2.BotAI):
 	# Method to make attack decisions
 	async def attack(self):
 		if self.supply_army > self.hr_attackSupply:
-			for s in self.units(STALKER).idle:
-				await self.do(s.attack(self.find_target(self.state)))
-			for s in self.units(ZEALOT).idle:
+			for s in self.units.of_type(self.armyUnits):
 				await self.do(s.attack(self.find_target(self.state)))
 
 		elif self.supply_army > self.hr_defendSupply:
 			if len(self.known_enemy_units) > 0:
-				for s in self.units(STALKER).idle:
+				for s in self.units.of_type(self.armyUnits):
 					await self.do(s.attack(random.choice(self.known_enemy_units)))
-				for s in self.units(ZEALOT).idle:
-					await self.do(s.attack(random.choice(self.known_enemy_units)))
+
+	def generate_pylon_position(self):
+		#if self.units(PYLON).amount == 0 :
+		#	return self.main_base_ramp.top_center.random_on_distance(self.hr_buildDistance)
+		#else :
+			nexusPosition = self.units(NEXUS).random.position.to2.random_on_distance(self.hr_buildDistance)
+			closest = None
+			closest_dist = 9000
+			for mineral in self.state.mineral_field:
+				dist = nexusPosition.distance_to(mineral.position.to2)
+				if closest == None or dist < closest_dist:
+					closest_dist = dist
+					closest = mineral.position.to2
+			newX = nexusPosition.x - (closest.x - nexusPosition.x)
+			newY = nexusPosition.y - (closest.y - nexusPosition.y)
+			return Point2((newX, newY))
 
 run_game(maps.get("TritonLE"), [
 		Bot(Race.Protoss, Pylon_AI()),
