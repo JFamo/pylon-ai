@@ -22,27 +22,28 @@ class Pylon_AI(sc2.BotAI):
 		await self.attempt_build()
 
 	async def attempt_build(self):
-		if(self.can_afford(self.buildPlans.peek())):
-			await self.build_unit(self.buildPlans.dequeue())
+		if(len(self.buildPlans) > 0):
+			if(self.can_afford(self.buildPlans.peek())):
+				await self.build_unit(self.buildPlans.dequeue())
 
 	async def assess_builds(self):
 		# Assess workers using multiplier by num of bases
 		if len(self.units(PROBE)) + self.buildPlans.countOf(PROBE) < self.hr_workersPerBase * len(self.units(NEXUS)):
-			self.buildPlans.enqueue(PROBE)
+			self.buildPlans.enqueue(PROBE, self.hr_buildPriorities["PROBE"])
 			print(self.buildPlans)
 		# Assess pylons using heurustic threshold approaching max supply
 		if self.supply_left < self.hr_supplyTrigger and not self.already_pending(PYLON) and not self.buildPlans.contains(PYLON):
-			self.buildPlans.enqueue(PYLON)
+			self.buildPlans.enqueue(PYLON, self.hr_buildPriorities["PYLON"])
 			print(self.buildPlans)
 		# Assess gateways checking for complete pylon and using heuristic threshold based on num of bases
 		pylons = self.units(PYLON).ready
 		if pylons.exists:
 			if len(self.units(GATEWAY)) + self.buildPlans.countOf(GATEWAY) < (self.hr_gatewayMultiplier * len(self.units(NEXUS))):
-				self.buildPlans.enqueue(GATEWAY)
+				self.buildPlans.enqueue(GATEWAY, self.hr_buildPriorities["GATEWAY"])
 				print(self.buildPlans)
 		# Assess expansion by checking heuristic predictive expansion time
 		if (self.time / self.hr_expansionTime) > len(self.units(NEXUS)) + self.buildPlans.countOf(NEXUS):
-			self.buildPlans.prioritize(NEXUS)
+			self.buildPlans.enqueue(NEXUS, self.hr_buildPriorities["NEXUS"])
 			print(self.buildPlans)
 
 	# Generic method to handle dequeuing unit from build plans
@@ -62,7 +63,7 @@ class Pylon_AI(sc2.BotAI):
 			if nexuses.exists:
 				await self.build(PYLON, near=nexuses.first)
 			elif not self.buildPlans.contains(NEXUS):
-				self.buildPlans.enqueue(NEXUS)
+				self.buildPlans.enqueue(NEXUS, self.hr_buildPriorities["NEXUS"])
 				print(self.buildPlans)
 
 run_game(maps.get("TritonLE"), [

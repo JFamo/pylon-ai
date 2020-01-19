@@ -1,8 +1,9 @@
 class Node:
 
-	def __init__(self, value):
+	def __init__(self, value, priority):
 		self.value = value  
 		self.next = None 
+		self.priority = priority
 	
 	def __str__(self):
 		return "Node({})".format(self.value) 
@@ -35,18 +36,34 @@ class Queue:
 		else :
 			return False
 
-	def enqueue(self, x):
+	def enqueue(self, x, priority):
 
 		# Create node
-		newNode = Node(x)
+		newNode = Node(x, priority)
 
 		# Case for first node
 		if self.count == 0:
 			self.head = newNode
+			self.tail = newNode
+			newNode.next = None
 		else:
-			self.tail.next = newNode
-		
-		self.tail = newNode
+			# Check if we should be head
+			if(newNode.priority > self.head.priority):
+				newNode.next = self.head
+				self.head = newNode
+			else:
+				thisNode = self.head
+				while(thisNode.next):
+					if(newNode.priority > thisNode.next.priority):
+						newNode.next = thisNode.next
+						thisNode.next = newNode
+						break
+					else:
+						thisNode = thisNode.next
+				# Handle lowest priority
+				if(newNode.next == None):
+					self.tail.next = newNode
+					self.tail = newNode
 
 		# Update count
 		self.count += 1
@@ -78,31 +95,6 @@ class Queue:
 	def __len__(self):
 
 		return self.count
-
-	def reverse(self): 
-
-		# We do not need to reverse length 1 or less
-		if self.count > 1 :
-
-			# Save all elements to list
-			nodeList = []
-			thisNode = self.head
-
-			while(thisNode.next):
-				nodeList.append(thisNode)
-				if thisNode.next == self.tail:
-					nodeList.append(self.tail)
-					break
-				thisNode = thisNode.next
-
-			# Iterate and re-build
-			for index in range(self.count - 1, -1, -1):
-				nodeList[index].next = nodeList[index-1]
-
-			# Set new head and tail
-			self.tail = nodeList[0]
-			self.tail.next = None
-			self.head = nodeList[self.count - 1]
 
 	def contains(self, item):
 
