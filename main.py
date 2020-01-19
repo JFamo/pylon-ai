@@ -13,9 +13,9 @@ class Pylon_AI(sc2.BotAI):
 	hr_supplyTrigger = 5
 	hr_gatewayMultiplier = 2
 	hr_expansionTime = 240 # Expansion time in seconds
-	hr_workersPerBase = 24
+	hr_workersPerBase = 22
 	hr_zealotratio = 0.5
-	hr_buildPriorities = {"PROBE": 0, "NEXUS": 10, "PYLON": 4, "GATEWAY": 3, "ZEALOT": 1, "ASSIMILATOR": 2} # This should be situational, generalize for now
+	hr_buildPriorities = {"PROBE": 1, "NEXUS": 10, "PYLON": 4, "GATEWAY": 3, "ZEALOT": 1, "ASSIMILATOR": 2} # This should be situational, generalize for now
 
 	# Local Vars
 	buildPlans = Queue()
@@ -60,7 +60,9 @@ class Pylon_AI(sc2.BotAI):
 
 		# Assess assimilator build by checking for empty gas by Nexus
 		for nexus in self.units(NEXUS).ready:
-            vespene = self.state.vespene_geyser.closer_than(25.0, nexus)
+			vespenes = self.state.vespene_geyser.closer_than(25.0, nexus)
+			if(len(vespenes) > self.buildPlans.countOf(ASSIMILATOR)):
+				self.buildPlans.enqueue(ASSIMILATOR, self.hr_buildPriorities["ASSIMILATOR"])
 
 	# Generic method to handle dequeuing unit from build plans
 	async def build_unit(self, unit):
@@ -78,15 +80,28 @@ class Pylon_AI(sc2.BotAI):
 			gateways = self.units(GATEWAY).ready.idle
 			if gateways:
 				await self.do(gateways.first.train(ZEALOT))
+		if(unit == ASSIMILATOR):
+			await self.build_assimilator()
 
 	# Method to place and build pylons or nexus if required
 	async def build_pylons(self):
 			nexuses = self.units(NEXUS).ready
 			if nexuses.exists:
-				await self.build(PYLON, near=nexuses.first)
+				await self.build(PYLON, near=self.main_base_ramp.top_center)
 			elif not self.buildPlans.contains(NEXUS):
 				self.buildPlans.enqueue(NEXUS, self.hr_buildPriorities["NEXUS"])
 				print(self.buildPlans)
+
+	# Method to build gas on open geyser
+	async def build_assimilator(self):
+		for nexus in self.units(NEXUS).ready:
+			vespenes = self.state.vespene_geyser.closer_than(25.0, nexus)
+			for vespene in vespenes:
+				worker = self.select_build_worker(vespene.position)
+				if worker is None:
+					break
+				if not self.units(ASSIMILATOR).closer_than(1.0, vespene).exists:
+					await self.do(worker.build(ASSIMILATOR, vespene))
 
 run_game(maps.get("TritonLE"), [
 		Bot(Race.Protoss, Pylon_AI()),
