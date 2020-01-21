@@ -7,6 +7,7 @@ from sc2.position import Point2
 from sc2.player import Bot, Computer
 from sc2.constants import *
 from sc2.game_data import AbilityData, GameData
+from sc2.game_state import GameState
 from sc2.ids.unit_typeid import UnitTypeId
 from sc2.unit import Unit
 from sc2.units import Units
@@ -57,6 +58,7 @@ class Pylon_AI(sc2.BotAI):
 	# Local Vars
 	buildPlans = Queue()
 	armyUnits = {UnitTypeId.ZEALOT, UnitTypeId.SENTRY, UnitTypeId.STALKER}
+	pendingUpgrades = []
 
 	async def on_step(self, iteration):
 		if(self.time % 10 == 0):
@@ -78,7 +80,7 @@ class Pylon_AI(sc2.BotAI):
 
 	def getUpgradeStatus(self, upgrade):
 
-		if self.buildPlans.countOf(upgrade) + self.already_pending(upgrade) == 0
+		if self.buildPlans.countOf(upgrade) == 0 and upgrade not in self.pendingUpgrades:
 			return False
 		return True
 
@@ -156,7 +158,8 @@ class Pylon_AI(sc2.BotAI):
 		for upgrade in self.hr_upgradeTime:
 			if self.time > self.hr_upgradeTime[upgrade][1]:
 				if self.units(self.hr_upgradeTime[upgrade][0]).ready.exists:
-					if self.getUpgradeStatus(upgrade):
+					if not self.getUpgradeStatus(upgrade):
+						self.pendingUpgrades.append(upgrade)
 						self.buildPlans.enqueue(upgrade, self.getUpgradePriority(upgrade))
 
 	# Generic method to handle dequeuing unit from build plans
@@ -190,7 +193,7 @@ class Pylon_AI(sc2.BotAI):
 		if(unit == FORGE):
 			await self.build(FORGE, near=self.units(PYLON).ready.random)
 		# Handle upgrades
-		if unit in self.hr_upgradeTime
+		if unit in self.hr_upgradeTime:
 			buildings = self.units(self.hr_upgradeTime[unit][0]).ready.idle
 			if buildings:
 				await self.do(buildings.first.research(unit))
