@@ -37,7 +37,7 @@ class Pylon_AI(sc2.BotAI):
 		await self.distribute_workers()
 		await self.assess_builds()
 		await self.attempt_build()
-
+		await self.activate_abilities()
 		await self.attack()
 
 	async def attempt_build(self):
@@ -209,6 +209,10 @@ class Pylon_AI(sc2.BotAI):
 
 	async def activate_abilities(self):
 		
+		# Handle sentry abilities
+		for sentry in self.units(SENTRY):
+			if sentry.is_attacking and sentry.energy >= 75:
+				await self.do(sentry(GUARDIANSHIELD_GUARDIANSHIELD))
 
 	def generate_pylon_position(self):
 		#if self.units(PYLON).amount == 0 :
