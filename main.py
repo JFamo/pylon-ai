@@ -76,6 +76,12 @@ class Pylon_AI(sc2.BotAI):
 
 		return self.units(unit).amount + self.buildPlans.countOf(unit) + self.already_pending(unit)
 
+	def getUpgradeStatus(self, upgrade):
+
+		if self.buildPlans.countOf(upgrade) + self.already_pending(upgrade) == 0
+			return False
+		return True
+
 	def getUpgradePriority(self, upgrade):
 
 		if upgrade in self.hr_upgradePriorities:
@@ -150,7 +156,8 @@ class Pylon_AI(sc2.BotAI):
 		for upgrade in self.hr_upgradeTime:
 			if self.time > self.hr_upgradeTime[upgrade][1]:
 				if self.units(self.hr_upgradeTime[upgrade][0]).ready.exists:
-					self.buildPlans.enqueue(upgrade, self.getUpgradePriority(upgrade))
+					if self.getUpgradeStatus(upgrade):
+						self.buildPlans.enqueue(upgrade, self.getUpgradePriority(upgrade))
 
 	# Generic method to handle dequeuing unit from build plans
 	async def build_unit(self, unit):
@@ -183,7 +190,7 @@ class Pylon_AI(sc2.BotAI):
 		if(unit == FORGE):
 			await self.build(FORGE, near=self.units(PYLON).ready.random)
 		# Handle upgrades
-		if isinstance(unit, UpgradeId):
+		if unit in self.hr_upgradeTime
 			buildings = self.units(self.hr_upgradeTime[unit][0]).ready.idle
 			if buildings:
 				await self.do(buildings.first.research(unit))
