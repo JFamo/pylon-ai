@@ -48,33 +48,7 @@ class Pylon_AI(sc2.BotAI):
 
 	def getUnitCount(self, unit):
 
-		return self.units(unit).amount + self.buildPlans.countOf(unit) + self.getBuildQueueCount(unit)
-
-	def getBuildQueueCount(self, unit):
-
-		count = 0
-
-		if(unit == FORGE):
-			for probe in self.units(PROBE):
-				if PROTOSSBUILD_FORGE in probe.orders:
-					count += 1
-
-		if(unit == CYBERNETICSCORE):
-			for probe in self.units(PROBE):
-				if PROTOSSBUILD_CYBERNETICSCORE in probe.orders:
-					count += 1
-
-		if(unit == NEXUS):
-			for probe in self.units(PROBE):
-				if PROTOSSBUILD_NEXUS in probe.orders:
-					count += 1
-
-		if(unit == GATEWAY):
-			for probe in self.units(PROBE):
-				if PROTOSSBUILD_GATEWAY in probe.orders:
-					count += 1
-
-		return count
+		return self.units(unit).amount + self.buildPlans.countOf(unit) + self.already_pending(unit)
 
 	async def assess_builds(self):
 
