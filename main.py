@@ -11,6 +11,7 @@ from sc2.ids.unit_typeid import UnitTypeId
 from sc2.unit import Unit
 from sc2.units import Units
 from sc2.unit_command import UnitCommand
+from sc2.ids.upgrade_id import UpgradeId
 
 class Pylon_AI(sc2.BotAI):
 
@@ -37,28 +38,29 @@ class Pylon_AI(sc2.BotAI):
 
 	# Expected timing of upgrades
 	hr_upgradeTime = {}
-	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDWEAPONSLEVEL1] = 200
-	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDARMORLEVEL1] = 240
-	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDWEAPONSLEVEL2] = 400
-	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDARMORLEVEL2] = 440
-	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDWEAPONSLEVEL3] = 600
-	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDARMORLEVEL3] = 640
-	hr_upgradeTime[FORGERESEARCH_PROTOSSSHIELDSLEVEL1] = 300
-	hr_upgradeTime[FORGERESEARCH_PROTOSSSHIELDSLEVEL2] = 400
-	hr_upgradeTime[FORGERESEARCH_PROTOSSSHIELDSLEVEL3] = 500
-	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRWEAPONSLEVEL1] = 250
-	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRWEAPONSLEVEL2] = 500
-	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRWEAPONSLEVEL3] = 750
-	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRARMORLEVEL1] = 300
-	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRARMORLEVEL2] = 400
-	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRARMORLEVEL3] = 500
+	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDWEAPONSLEVEL1] = [FORGE,200]
+	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDARMORLEVEL1] = [FORGE,240]
+	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDWEAPONSLEVEL2] = [FORGE,400]
+	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDARMORLEVEL2] = [FORGE,440]
+	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDWEAPONSLEVEL3] = [FORGE,600]
+	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDARMORLEVEL3] = [FORGE,640]
+	hr_upgradeTime[FORGERESEARCH_PROTOSSSHIELDSLEVEL1] = [FORGE,300]
+	hr_upgradeTime[FORGERESEARCH_PROTOSSSHIELDSLEVEL2] = [FORGE,500]
+	hr_upgradeTime[FORGERESEARCH_PROTOSSSHIELDSLEVEL3] = [FORGE,700]
+	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRWEAPONSLEVEL1] = [CYBERNETICSCORE,350]
+	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRWEAPONSLEVEL2] = [CYBERNETICSCORE,550]
+	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRWEAPONSLEVEL3] = [CYBERNETICSCORE,750]
+	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRARMORLEVEL1] = [CYBERNETICSCORE,440]
+	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRARMORLEVEL2] = [CYBERNETICSCORE,540]
+	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRARMORLEVEL3] = [CYBERNETICSCORE,640]
 
 	# Local Vars
 	buildPlans = Queue()
 	armyUnits = {UnitTypeId.ZEALOT, UnitTypeId.SENTRY, UnitTypeId.STALKER}
 
 	async def on_step(self, iteration):
-		await self.distribute_workers()
+		if(self.time % 10 == 0):
+			await self.distribute_workers()
 		await self.assess_builds()
 		await self.attempt_build()
 		await self.activate_abilities()
@@ -100,21 +102,6 @@ class Pylon_AI(sc2.BotAI):
 		if (self.time / self.hr_expansionTime) > self.getUnitCount(NEXUS):
 			self.buildPlans.enqueue(NEXUS, self.hr_buildPriorities[NEXUS])
 
-		# Assess zealot build by checking heuristic for army composition
-		if self.units(GATEWAY).ready.exists:
-			if (self._game_data.units[ZEALOT.value]._proto.food_required * self.getUnitCount(ZEALOT)) / self.supply_cap < self.hr_unitRatio[ZEALOT] :
-				self.buildPlans.enqueue(ZEALOT, self.hr_buildPriorities[ZEALOT])
-
-		# Assess stalker build by checking heuristic for army composition
-		if self.units(GATEWAY).ready.exists and self.units(CYBERNETICSCORE).ready.exists:
-			if (self._game_data.units[STALKER.value]._proto.food_required * self.getUnitCount(STALKER)) / self.supply_cap < self.hr_unitRatio[STALKER] :
-				self.buildPlans.enqueue(STALKER, self.hr_buildPriorities[STALKER])
-
-		# Assess sentry build by checking heuristic for army composition
-		if self.units(GATEWAY).ready.exists and self.units(CYBERNETICSCORE).ready.exists:
-			if (self._game_data.units[SENTRY.value]._proto.food_required * self.getUnitCount(SENTRY)) / self.supply_cap < self.hr_unitRatio[SENTRY] :
-				self.buildPlans.enqueue(SENTRY, self.hr_buildPriorities[SENTRY])
-
 		# Assess assimilator build by checking for empty gas by Nexus
 		openGeyserCount = 0
 		for nexus in self.units(NEXUS).ready:
@@ -122,34 +109,48 @@ class Pylon_AI(sc2.BotAI):
 				if not self.units(ASSIMILATOR).closer_than(1.0, vespene).exists:
 					openGeyserCount += 1
 		if(openGeyserCount > self.buildPlans.countOf(ASSIMILATOR)):
-			self.buildPlans.enqueue(ASSIMILATOR, self.hr_buildPriorities["ASSIMILATOR"])
+			self.buildPlans.enqueue(ASSIMILATOR, self.hr_buildPriorities[ASSIMILATOR])
 		elif(self.buildPlans.peek() == ASSIMILATOR):
 			self.buildPlans.dequeue()
 
 		# Assess cybernetics core build
 		if self.units(GATEWAY).ready.exists:
 			if self.getUnitCount(CYBERNETICSCORE) < 1:
-				self.buildPlans.enqueue(CYBERNETICSCORE, self.hr_buildPriorities["CYBERNETICSCORE"])
+				self.buildPlans.enqueue(CYBERNETICSCORE, self.hr_buildPriorities[CYBERNETICSCORE])
 
 		# Assess forge build
 		if self.units(GATEWAY).ready.exists:
 			if self.getUnitCount(FORGE) < 1:
-				self.buildPlans.enqueue(FORGE, self.hr_buildPriorities["FORGE"])
+				self.buildPlans.enqueue(FORGE, self.hr_buildPriorities[FORGE])
+
+		self.assess_army(ZEALOT, [GATEWAY])
+		self.assess_army(STALKER, [GATEWAY, CYBERNETICSCORE])
+		self.assess_army(SENTRY, [GATEWAY, CYBERNETICSCORE])
+
+		self.assess_upgrades()
 
 		# Escape case for misplaced pylons
 		if self.minerals > 600:
 			self.buildPlans.enqueue(PYLON, 100)
 
-	async def assess_army(self, unit, requirements):
+	def assess_army(self, unit, requirements):
 
 		meet_requirements = True
 
 		for structure in requirements:
-			if not self.units(requirements).ready.exists:
+			if not self.units(structure).ready.exists:
 				meet_requirements = False
 
-		if (self._game_data.units[unit.value]._proto.food_required * self.getUnitCount(unit)) / self.supply_cap < self.hr_unitRatio[unit] :
-				self.buildPlans.enqueue(unit, self.hr_buildPriorities[unit])
+		if meet_requirements:
+			if (self._game_data.units[unit.value]._proto.food_required * self.getUnitCount(unit)) / self.supply_cap < self.hr_unitRatio[unit] :
+					self.buildPlans.enqueue(unit, self.hr_buildPriorities[unit])
+
+	def assess_upgrades(self):
+
+		for upgrade in self.hr_upgradeTime:
+			if self.time > self.hr_upgradeTime[upgrade][1]:
+				if self.units(self.hr_upgradeTime[upgrade][0]).ready.exists:
+					self.buildPlans.enqueue(upgrade, self.getUpgradePriority(upgrade))
 
 	# Generic method to handle dequeuing unit from build plans
 	async def build_unit(self, unit):
@@ -166,21 +167,26 @@ class Pylon_AI(sc2.BotAI):
 		if(unit == ZEALOT):
 			gateways = self.units(GATEWAY).ready.idle
 			if gateways:
-				await self.do(gateways.first.train(ZEALOT))
+				await self.do(gateways.first.train(ZEALOT,self.main_base_ramp.top_center))
 		if(unit == STALKER):
 			gateways = self.units(GATEWAY).ready.idle
 			if gateways:
-				await self.do(gateways.first.train(STALKER))
+				await self.do(gateways.first.train(STALKER,self.main_base_ramp.top_center))
 		if(unit == SENTRY):
 			gateways = self.units(GATEWAY).ready.idle
 			if gateways:
-				await self.do(gateways.first.train(SENTRY))
+				await self.do(gateways.first.train(SENTRY,self.main_base_ramp.top_center))
 		if(unit == ASSIMILATOR):
 			await self.build_assimilator()
 		if(unit == CYBERNETICSCORE):
 			await self.build(CYBERNETICSCORE, near=self.units(PYLON).ready.random)
 		if(unit == FORGE):
 			await self.build(FORGE, near=self.units(PYLON).ready.random)
+		# Handle upgrades
+		if isinstance(unit, UpgradeId):
+			buildings = self.units(self.hr_upgradeTime[unit][0]).ready.idle
+			if buildings:
+				await self.do(buildings.first.research(unit))
 
 	# Method to place and build pylons or nexus if required
 	async def build_pylons(self):
@@ -188,7 +194,7 @@ class Pylon_AI(sc2.BotAI):
 			if nexuses.exists:
 				await self.build(PYLON, near=self.generate_pylon_position())
 			elif not self.buildPlans.contains(NEXUS):
-				self.buildPlans.enqueue(NEXUS, self.hr_buildPriorities["NEXUS"])
+				self.buildPlans.enqueue(NEXUS, self.hr_buildPriorities[NEXUS])
 				print(self.buildPlans)
 
 	# Method to build gas on open geyser
