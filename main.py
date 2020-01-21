@@ -78,9 +78,9 @@ class Pylon_AI(sc2.BotAI):
 
 	def getUpgradePriority(self, upgrade):
 
-		if upgrade in hr_upgradePriorities:
-			return hr_upgradePriorities[upgrade]
-		return hr_upgradePriorities["DEFAULT"]
+		if upgrade in self.hr_upgradePriorities:
+			return self.hr_upgradePriorities[upgrade]
+		return self.hr_upgradePriorities["DEFAULT"]
 
 	async def assess_builds(self):
 
@@ -167,15 +167,15 @@ class Pylon_AI(sc2.BotAI):
 		if(unit == ZEALOT):
 			gateways = self.units(GATEWAY).ready.idle
 			if gateways:
-				await self.do(gateways.first.train(ZEALOT,self.main_base_ramp.top_center))
+				await self.do(gateways.first.train(ZEALOT))
 		if(unit == STALKER):
 			gateways = self.units(GATEWAY).ready.idle
 			if gateways:
-				await self.do(gateways.first.train(STALKER,self.main_base_ramp.top_center))
+				await self.do(gateways.first.train(STALKER))
 		if(unit == SENTRY):
 			gateways = self.units(GATEWAY).ready.idle
 			if gateways:
-				await self.do(gateways.first.train(SENTRY,self.main_base_ramp.top_center))
+				await self.do(gateways.first.train(SENTRY))
 		if(unit == ASSIMILATOR):
 			await self.build_assimilator()
 		if(unit == CYBERNETICSCORE):
@@ -250,9 +250,3 @@ class Pylon_AI(sc2.BotAI):
 			newX = nexusPosition.x - (closest.x - nexusPosition.x)
 			newY = nexusPosition.y - (closest.y - nexusPosition.y)
 			return Point2((newX, newY))
-
-run_game(maps.get("TritonLE"), [
-		Bot(Race.Protoss, Pylon_AI()),
-		Computer(Race.Terran, Difficulty.Medium)
-	], realtime=True)
-
