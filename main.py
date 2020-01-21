@@ -5,7 +5,7 @@ from queue import *
 from sc2 import run_game, maps, Race, Difficulty
 from sc2.position import Point2
 from sc2.player import Bot, Computer
-from sc2.constants import NEXUS, PROBE, PYLON, GATEWAY, ZEALOT, ASSIMILATOR, CYBERNETICSCORE, FORGE, STALKER, SENTRY, PROTOSSBUILD_CYBERNETICSCORE, PROTOSSBUILD_FORGE
+from sc2.constants import *
 from sc2.game_data import AbilityData, GameData
 from sc2.ids.unit_typeid import UnitTypeId
 from sc2.unit import Unit
@@ -37,6 +37,7 @@ class Pylon_AI(sc2.BotAI):
 		await self.distribute_workers()
 		await self.assess_builds()
 		await self.attempt_build()
+
 		await self.attack()
 
 	async def attempt_build(self):
@@ -61,6 +62,16 @@ class Pylon_AI(sc2.BotAI):
 		if(unit == CYBERNETICSCORE):
 			for probe in self.units(PROBE):
 				if PROTOSSBUILD_CYBERNETICSCORE in probe.orders:
+					count += 1
+
+		if(unit == NEXUS):
+			for probe in self.units(PROBE):
+				if PROTOSSBUILD_NEXUS in probe.orders:
+					count += 1
+
+		if(unit == GATEWAY):
+			for probe in self.units(PROBE):
+				if PROTOSSBUILD_GATEWAY in probe.orders:
 					count += 1
 
 		return count
@@ -108,6 +119,8 @@ class Pylon_AI(sc2.BotAI):
 					openGeyserCount += 1
 		if(openGeyserCount > self.buildPlans.countOf(ASSIMILATOR)):
 			self.buildPlans.enqueue(ASSIMILATOR, self.hr_buildPriorities["ASSIMILATOR"])
+		elif(self.buildPlans.peek() == ASSIMILATOR):
+			self.buildPlans.dequeue()
 
 		# Assess cybernetics core build
 		if self.units(GATEWAY).ready.exists:
@@ -193,6 +206,9 @@ class Pylon_AI(sc2.BotAI):
 			if len(self.known_enemy_units) > 0:
 				for s in self.units.of_type(self.armyUnits):
 					await self.do(s.attack(random.choice(self.known_enemy_units)))
+
+	async def activate_abilities(self):
+		
 
 	def generate_pylon_position(self):
 		#if self.units(PYLON).amount == 0 :
