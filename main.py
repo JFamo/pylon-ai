@@ -15,19 +15,43 @@ from sc2.unit_command import UnitCommand
 class Pylon_AI(sc2.BotAI):
 
 	# Heuristics
-	hr_supplyTrigger = 5
-	hr_gatewayMultiplier = 2
+	hr_supplyTrigger = 5 # Remaining supply to build pylon
+	hr_gatewayMultiplier = 2 # Number of gateways per nexus
 	hr_expansionTime = 240 # Expansion time in seconds
-	hr_workersPerBase = 22
+	hr_workersPerBase = 22 # Number of workers per nexus
+	hr_buildDistance = 10.0 # Average build distance around target
+	hr_attackSupply = 50 # Supply to launch attack
+	hr_defendSupply = 10 # Supply to attempt defense
+	hr_gasDetector = 10.0 # Range to detect assimilators
+
+	# Priority values for all units and structures
+	hr_buildPriorities = {PROBE: 1, NEXUS: 10, PYLON: 4, GATEWAY: 3, ZEALOT: 1, SENTRY: 1, STALKER: 1, ASSIMILATOR: 2, CYBERNETICSCORE: 5, FORGE: 5} # This should be situational, generalize for now
+	# Priority values for all upgrades
+	hr_upgradePriorities = {"DEFAULT": 5}
+
+	# Supply ratio of units for build
 	hr_unitRatio = {}
 	hr_unitRatio[ZEALOT] = 0.25
 	hr_unitRatio[STALKER] = 0.40
 	hr_unitRatio[SENTRY] = 0.1
-	hr_buildDistance = 10.0
-	hr_attackSupply = 50
-	hr_defendSupply = 10
-	hr_gasDetector = 15.0
-	hr_buildPriorities = {"PROBE": 1, "NEXUS": 10, "PYLON": 4, "GATEWAY": 3, "ZEALOT": 1, "SENTRY": 1, "STALKER": 1, "ASSIMILATOR": 2, "CYBERNETICSCORE": 5, "FORGE": 5} # This should be situational, generalize for now
+
+	# Expected timing of upgrades
+	hr_upgradeTime = {}
+	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDWEAPONSLEVEL1] = 200
+	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDARMORLEVEL1] = 240
+	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDWEAPONSLEVEL2] = 400
+	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDARMORLEVEL2] = 440
+	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDWEAPONSLEVEL3] = 600
+	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDARMORLEVEL3] = 640
+	hr_upgradeTime[FORGERESEARCH_PROTOSSSHIELDSLEVEL1] = 300
+	hr_upgradeTime[FORGERESEARCH_PROTOSSSHIELDSLEVEL2] = 400
+	hr_upgradeTime[FORGERESEARCH_PROTOSSSHIELDSLEVEL3] = 500
+	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRWEAPONSLEVEL1] = 250
+	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRWEAPONSLEVEL2] = 500
+	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRWEAPONSLEVEL3] = 750
+	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRARMORLEVEL1] = 300
+	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRARMORLEVEL2] = 400
+	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRARMORLEVEL3] = 500
 
 	# Local Vars
 	buildPlans = Queue()
@@ -50,40 +74,46 @@ class Pylon_AI(sc2.BotAI):
 
 		return self.units(unit).amount + self.buildPlans.countOf(unit) + self.already_pending(unit)
 
+	def getUpgradePriority(self, upgrade):
+
+		if upgrade in hr_upgradePriorities:
+			return hr_upgradePriorities[upgrade]
+		return hr_upgradePriorities["DEFAULT"]
+
 	async def assess_builds(self):
 
 		# Assess workers using multiplier by num of bases
 		if self.getUnitCount(PROBE) < self.hr_workersPerBase * self.units(NEXUS).amount:
-			self.buildPlans.enqueue(PROBE, self.hr_buildPriorities["PROBE"])
+			self.buildPlans.enqueue(PROBE, self.hr_buildPriorities[PROBE])
 
 		# Assess pylons using heurustic threshold approaching max supply
 		if self.supply_left < self.hr_supplyTrigger and not self.already_pending(PYLON) and not self.buildPlans.contains(PYLON):
-			self.buildPlans.enqueue(PYLON, self.hr_buildPriorities["PYLON"])
+			self.buildPlans.enqueue(PYLON, self.hr_buildPriorities[PYLON])
 
 		# Assess gateways checking for complete pylon and using heuristic threshold based on num of bases
 		pylons = self.units(PYLON).ready
 		if pylons.exists:
 			if self.getUnitCount(GATEWAY) < (self.hr_gatewayMultiplier * self.units(NEXUS).amount):
-				self.buildPlans.enqueue(GATEWAY, self.hr_buildPriorities["GATEWAY"])
+				self.buildPlans.enqueue(GATEWAY, self.hr_buildPriorities[GATEWAY])
 
 		# Assess expansion by checking heuristic predictive expansion time
 		if (self.time / self.hr_expansionTime) > self.getUnitCount(NEXUS):
-			self.buildPlans.enqueue(NEXUS, self.hr_buildPriorities["NEXUS"])
+			self.buildPlans.enqueue(NEXUS, self.hr_buildPriorities[NEXUS])
 
 		# Assess zealot build by checking heuristic for army composition
 		if self.units(GATEWAY).ready.exists:
 			if (self._game_data.units[ZEALOT.value]._proto.food_required * self.getUnitCount(ZEALOT)) / self.supply_cap < self.hr_unitRatio[ZEALOT] :
-				self.buildPlans.enqueue(ZEALOT, self.hr_buildPriorities["ZEALOT"])
+				self.buildPlans.enqueue(ZEALOT, self.hr_buildPriorities[ZEALOT])
 
 		# Assess stalker build by checking heuristic for army composition
 		if self.units(GATEWAY).ready.exists and self.units(CYBERNETICSCORE).ready.exists:
 			if (self._game_data.units[STALKER.value]._proto.food_required * self.getUnitCount(STALKER)) / self.supply_cap < self.hr_unitRatio[STALKER] :
-				self.buildPlans.enqueue(STALKER, self.hr_buildPriorities["STALKER"])
+				self.buildPlans.enqueue(STALKER, self.hr_buildPriorities[STALKER])
 
 		# Assess sentry build by checking heuristic for army composition
 		if self.units(GATEWAY).ready.exists and self.units(CYBERNETICSCORE).ready.exists:
 			if (self._game_data.units[SENTRY.value]._proto.food_required * self.getUnitCount(SENTRY)) / self.supply_cap < self.hr_unitRatio[SENTRY] :
-				self.buildPlans.enqueue(SENTRY, self.hr_buildPriorities["SENTRY"])
+				self.buildPlans.enqueue(SENTRY, self.hr_buildPriorities[SENTRY])
 
 		# Assess assimilator build by checking for empty gas by Nexus
 		openGeyserCount = 0
@@ -109,6 +139,17 @@ class Pylon_AI(sc2.BotAI):
 		# Escape case for misplaced pylons
 		if self.minerals > 600:
 			self.buildPlans.enqueue(PYLON, 100)
+
+	async def assess_army(self, unit, requirements):
+
+		meet_requirements = True
+
+		for structure in requirements:
+			if not self.units(requirements).ready.exists:
+				meet_requirements = False
+
+		if (self._game_data.units[unit.value]._proto.food_required * self.getUnitCount(unit)) / self.supply_cap < self.hr_unitRatio[unit] :
+				self.buildPlans.enqueue(unit, self.hr_buildPriorities[unit])
 
 	# Generic method to handle dequeuing unit from build plans
 	async def build_unit(self, unit):
