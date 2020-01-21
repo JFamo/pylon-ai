@@ -5,11 +5,12 @@ from queue import *
 from sc2 import run_game, maps, Race, Difficulty
 from sc2.position import Point2
 from sc2.player import Bot, Computer
-from sc2.constants import NEXUS, PROBE, PYLON, GATEWAY, ZEALOT, ASSIMILATOR, CYBERNETICSCORE, FORGE, STALKER, SENTRY
+from sc2.constants import NEXUS, PROBE, PYLON, GATEWAY, ZEALOT, ASSIMILATOR, CYBERNETICSCORE, FORGE, STALKER, SENTRY, PROTOSSBUILD_CYBERNETICSCORE, PROTOSSBUILD_FORGE
 from sc2.game_data import AbilityData, GameData
 from sc2.ids.unit_typeid import UnitTypeId
 from sc2.unit import Unit
 from sc2.units import Units
+from sc2.unit_command import UnitCommand
 
 class Pylon_AI(sc2.BotAI):
 
@@ -41,10 +42,28 @@ class Pylon_AI(sc2.BotAI):
 	async def attempt_build(self):
 		if(len(self.buildPlans) > 0):
 			if(self.can_afford(self.buildPlans.peek())):
-				await self.build_unit(self.buildPlans.dequeue())
+				nextUnit = self.buildPlans.dequeue()
+				await self.build_unit(nextUnit)
 
 	def getUnitCount(self, unit):
-		return self.units(unit).amount + self.buildPlans.countOf(unit)
+
+		return self.units(unit).amount + self.buildPlans.countOf(unit) + self.getBuildQueueCount(unit)
+
+	def getBuildQueueCount(self, unit):
+
+		count = 0
+
+		if(unit == FORGE):
+			for probe in self.units(PROBE):
+				if PROTOSSBUILD_FORGE in probe.orders:
+					count += 1
+
+		if(unit == CYBERNETICSCORE):
+			for probe in self.units(PROBE):
+				if PROTOSSBUILD_CYBERNETICSCORE in probe.orders:
+					count += 1
+
+		return count
 
 	async def assess_builds(self):
 
