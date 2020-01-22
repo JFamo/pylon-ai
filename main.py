@@ -20,10 +20,11 @@ class Pylon_AI(sc2.BotAI):
 	hr_gatewayMultiplier = 2 # Number of gateways per nexus
 	hr_expansionTime = 240 # Expansion time in seconds
 	hr_workersPerBase = 22 # Number of workers per nexus
-	hr_buildDistance = 10.0 # Average build distance around target
+	hr_buildDistance = 6.0 # Average build distance around target
 	hr_attackSupply = 50 # Supply to launch attack
 	hr_defendSupply = 10 # Supply to attempt defense
 	hr_gasDetector = 10.0 # Range to detect assimilators
+	hr_defendDistance = 25.0 # Distance to nexus to defend
 
 	# Priority values for all units and structures
 	hr_buildPriorities = {PROBE: 1, NEXUS: 10, PYLON: 4, GATEWAY: 3, ZEALOT: 1, SENTRY: 1, STALKER: 1, ASSIMILATOR: 2, CYBERNETICSCORE: 5, FORGE: 5} # This should be situational, generalize for now
@@ -40,19 +41,19 @@ class Pylon_AI(sc2.BotAI):
 	hr_upgradeTime = {}
 	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDWEAPONSLEVEL1] = [FORGE,240]
 	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDARMORLEVEL1] = [FORGE,300]
-	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDWEAPONSLEVEL2] = [FORGE,400]
-	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDARMORLEVEL2] = [FORGE,440]
-	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDWEAPONSLEVEL3] = [FORGE,600]
-	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDARMORLEVEL3] = [FORGE,640]
+	#hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDWEAPONSLEVEL2] = [FORGE,400]
+	#hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDARMORLEVEL2] = [FORGE,440]
+	#hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDWEAPONSLEVEL3] = [FORGE,600]
+	#hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDARMORLEVEL3] = [FORGE,640]
 	hr_upgradeTime[FORGERESEARCH_PROTOSSSHIELDSLEVEL1] = [FORGE,350]
-	hr_upgradeTime[FORGERESEARCH_PROTOSSSHIELDSLEVEL2] = [FORGE,500]
-	hr_upgradeTime[FORGERESEARCH_PROTOSSSHIELDSLEVEL3] = [FORGE,700]
+	#hr_upgradeTime[FORGERESEARCH_PROTOSSSHIELDSLEVEL2] = [FORGE,500]
+	#hr_upgradeTime[FORGERESEARCH_PROTOSSSHIELDSLEVEL3] = [FORGE,700]
 	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRWEAPONSLEVEL1] = [CYBERNETICSCORE,550]
-	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRWEAPONSLEVEL2] = [CYBERNETICSCORE,650]
-	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRWEAPONSLEVEL3] = [CYBERNETICSCORE,750]
+	#hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRWEAPONSLEVEL2] = [CYBERNETICSCORE,650]
+	#hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRWEAPONSLEVEL3] = [CYBERNETICSCORE,750]
 	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRARMORLEVEL1] = [CYBERNETICSCORE,440]
-	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRARMORLEVEL2] = [CYBERNETICSCORE,540]
-	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRARMORLEVEL3] = [CYBERNETICSCORE,640]
+	#hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRARMORLEVEL2] = [CYBERNETICSCORE,540]
+	#hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRARMORLEVEL3] = [CYBERNETICSCORE,640]
 
 	# Local Vars
 	buildPlans = Queue()
@@ -65,7 +66,8 @@ class Pylon_AI(sc2.BotAI):
 		await self.assess_builds()
 		await self.attempt_build()
 		await self.activate_abilities()
-		await self.attack()
+		if(self.time % 10 == 0) and self.supply_army > 0:
+			await self.attack()
 
 	async def attempt_build(self):
 		if(len(self.buildPlans) > 0):
@@ -112,7 +114,7 @@ class Pylon_AI(sc2.BotAI):
 		# Assess assimilator build by checking for empty gas by Nexus
 		openGeyserCount = 0
 		for nexus in self.units(NEXUS).ready:
-			for vespene in self.state.vespene_geyser.closer_than(25.0, nexus):
+			for vespene in self.state.vespene_geyser.closer_than(self.hr_gasDetector, nexus):
 				if not self.units(ASSIMILATOR).closer_than(1.0, vespene).exists:
 					openGeyserCount += 1
 		if(openGeyserCount > self.buildPlans.countOf(ASSIMILATOR)):
@@ -139,6 +141,7 @@ class Pylon_AI(sc2.BotAI):
 		# Escape case for misplaced pylons
 		if self.minerals > 600:
 			self.buildPlans.enqueue(PYLON, 100)
+			await self.chat_send("If you see this it means I got confused. help.")
 
 	def assess_army(self, unit, requirements):
 
@@ -220,9 +223,9 @@ class Pylon_AI(sc2.BotAI):
 	# Method to identify an attacking target
 	def find_target(self, state):
 		if len(self.known_enemy_units) > 0:
-			return random.choice(self.known_enemy_units)
+			return random.choice(self.known_enemy_units).position
 		elif len(self.known_enemy_structures) > 0:
-			return random.choice(self.known_enemy_structures)
+			return random.choice(self.known_enemy_structures).position
 		else:
 			return self.enemy_start_locations[0]
 
@@ -234,8 +237,21 @@ class Pylon_AI(sc2.BotAI):
 
 		elif self.supply_army > self.hr_defendSupply:
 			if len(self.known_enemy_units) > 0:
-				for s in self.units.of_type(self.armyUnits):
-					await self.do(s.attack(random.choice(self.known_enemy_units)))
+				nearest_enemy = self.enemy_near_nexus()
+				if nearest_enemy[0] < self.hr_defendDistance:
+					for s in self.units.of_type(self.armyUnits):
+						await self.do(s.attack(nearest_enemy[1].position))
+
+	def enemy_near_nexus(self):
+
+		dist = 9000
+		unit = None
+		if len(self.known_enemy_units) > 0:
+			for nexus in self.units(NEXUS):
+				if self.known_enemy_units.closest_distance_to(nexus.position) < dist:
+					dist = self.known_enemy_units.closest_distance_to(nexus.position)
+					unit = self.known_enemy_units.closest_to(nexus.position)
+		return [dist, unit]
 
 	async def activate_abilities(self):
 		
