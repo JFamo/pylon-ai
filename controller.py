@@ -73,48 +73,48 @@ def cull_population(culling_threshold):
 
 def cross_breed(pylon, parent1, parent2):
 
-	pylon.hr_static = breed_dictionary(parent1.hr_static, parent2.hr_static)
-	pylon.hr_buildPriorities = breed_dictionary(parent1.hr_buildPriorities, parent2.hr_buildPriorities)
-	pylon.hr_upgradePriorities = breed_dictionary(parent1.hr_upgradePriorities, parent2.hr_upgradePriorities)
-	pylon.hr_unitRatio = breed_dictionary(parent1.hr_unitRatio, parent2.hr_unitRatio)
-	pylon.hr_upgradeTime = breed_dictionary(parent1.hr_upgradeTime, parent2.hr_upgradeTime)
-	pylon.hr_techTime = breed_dictionary(parent1.hr_techTime, parent2.hr_techTime)
+	pylon.hr_static = breed_dictionary(parent1.hr_static, parent2.hr_static, "normal")
+	pylon.hr_buildPriorities = breed_dictionary(parent1.hr_buildPriorities, parent2.hr_buildPriorities, "priority")
+	pylon.hr_upgradePriorities = breed_dictionary(parent1.hr_upgradePriorities, parent2.hr_upgradePriorities, "priority")
+	pylon.hr_unitRatio = breed_dictionary(parent1.hr_unitRatio, parent2.hr_unitRatio, "ratio")
+	pylon.hr_upgradeTime = breed_dictionary(parent1.hr_upgradeTime, parent2.hr_upgradeTime, "normal")
+	pylon.hr_techTime = breed_dictionary(parent1.hr_techTime, parent2.hr_techTime, "normal")
 
 	set_pylon_heritage(pylon, parent1.name, parent2.name, parent1.score, parent2.score)
 
-def breed_dictionary(p1, p2):
+def breed_dictionary(p1, p2, mutation_type):
 
 	new = {}
 
 	for x in p1:
 
-		new[x] = breed_heuristic(p1[x], p2[x])
+		new[x] = breed_heuristic(p1[x], p2[x], mutation_type)
 
 	return new
 
-def breed_list(p1, p2):
+def breed_list(p1, p2, mutation_type):
 
 	new = []
 
 	for x in range(len(p1)):
 
-		new.append(breed_heuristic(p1[x], p2[x]))
+		new.append(breed_heuristic(p1[x], p2[x], mutation_type))
 
 	return new
 
-def breed_heuristic(h1, h2):
+def breed_heuristic(h1, h2, mutation_type):
 
 	if isinstance(h1, (int, float)):
 
-		return avg(h1,h2)
+		return mutate(avg(h1,h2), mutation_type)
 
 	elif isinstance(h1, (dict)):
 
-		return breed_dictionary(h1,h2)
+		return breed_dictionary(h1,h2, mutation_type)
 
 	elif isinstance(h1, (list)):
 
-		return breed_list(h1, h2)
+		return breed_list(h1, h2, mutation_type)
 
 	else:
 
@@ -145,6 +145,7 @@ def commit_default_chevron():
 
 def run_genetics():
 
+	commit_default_chevron() # Note - comment this out on most runs, it will clear and reset population
 	culling_threshold = 1500
 	cull_population(culling_threshold)
 	pylon = Pylon_AI()
@@ -163,6 +164,20 @@ def run_genetics():
 	pylon.print_heuristics()
 
 	return pylon
+
+def mutate(num, type):
+
+	if type=="ratio":
+
+		return num + ((random.random() - 0.5) / 10.0)
+
+	elif type=="priority":
+
+		return num + (random.random() - 0.5)
+
+	else:
+
+		return num + ((random.random() - 0.5) * num)
 
 while True:
 
