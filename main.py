@@ -33,7 +33,7 @@ class Pylon_AI(sc2.BotAI):
 		self.hr_expansionTime = 260 # Expansion time in seconds
 		self.hr_workersPerBase = 22 # Number of workers per nexus
 		self.hr_buildDistance = 6.0 # Average build distance around target
-		self.hr_attackSupply = 50 # Supply to launch attack
+		self.hr_attackSupply = 30 # Supply to launch attack
 		self.hr_defendSupply = 10 # Supply to attempt defense
 		self.hr_gasDetector = 10.0 # Range to detect assimilators
 		self.hr_defendDistance = 25.0 # Distance to nexus to defend
@@ -96,7 +96,7 @@ class Pylon_AI(sc2.BotAI):
 		self.armyUnits = {UnitTypeId.ZEALOT, UnitTypeId.SENTRY, UnitTypeId.STALKER, UnitTypeId.VOIDRAY, UnitTypeId.COLOSSUS, UnitTypeId.HIGHTEMPLAR, UnitTypeId.DARKTEMPLAR, UnitTypeId.PHOENIX, UnitTypeId.CARRIER, UnitTypeId.DISRUPTOR, UnitTypeId.WARPPRISM, UnitTypeId.OBSERVER, UnitTypeId.IMMORTAL, UnitTypeId.ARCHON, UnitTypeId.ADEPT, UnitTypeId.ORACLE, UnitTypeId.TEMPEST}
 		self.pendingUpgrades = []
 		self.score = 0
-	
+
 	# Bot AI class startup async
 	async def on_start_async(self):
 		await self.chat_send("(glhf)")
@@ -406,5 +406,5 @@ class Pylon_AI(sc2.BotAI):
 
 		print(game_result)
 
-		with open('pylon_population.pkl', 'wb') as data:
-			pickle.dump(self, data, pickle.HIGHEST_PROTOCOL)
+		#with open('pylon_population.pkl', 'wb') as data:
+			#pickle.dump(self, data, pickle.HIGHEST_PROTOCOL)
