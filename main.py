@@ -1,9 +1,9 @@
 import sc2
 import random
 try:
-    import cPickle as pickle
+	import cPickle as pickle
 except ModuleNotFoundError:
-    import pickle
+	import pickle
 
 from queue import *
 from sc2 import run_game, maps, Race, Difficulty
@@ -398,8 +398,8 @@ class Pylon_AI(sc2.BotAI):
 	# On end of game, save to population
 	def on_end(self, game_result):
 		self.score = self.state.score.score
-		del self.buildPlans
-		del self.armyUnits
-		del self.pendingUpgrades
+		self.buildPlans = None
+		self.armyUnits = None
+		self.pendingUpgrades = None
 		with open('pylon_population.pkl', 'wb') as data:
 			pickle.dump(self, data, pickle.HIGHEST_PROTOCOL)
