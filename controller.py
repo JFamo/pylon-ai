@@ -47,8 +47,36 @@ def find_parents():
 
 def cross_breed(pylon, parent1, parent2):
 
-	return None
-	# TODO ~ avg all heuristics in child
+	pylon.hr_static = breed_dictionary(parent1.hr_static, parent2.hr_static)
+	pylon.hr_buildPriorities = breed_dictionary(parent1.hr_buildPriorities, parent2.hr_buildPriorities)
+	pylon.hr_upgradePriorities = breed_dictionary(parent1.hr_upgradePriorities, parent2.hr_upgradePriorities)
+	pylon.hr_unitRatio = breed_dictionary(parent1.hr_unitRatio, parent2.hr_unitRatio)
+	pylon.hr_upgradeTime = breed_dictionary(parent1.hr_upgradeTime, parent2.hr_upgradeTime)
+	pylon.hr_techTime = breed_dictionary(parent1.hr_techTime, parent2.hr_techTime)
+
+def breed_dictionary(p1, p2):
+
+	new = {}
+
+	for x in p1:
+
+		if isinstance(p1[x], (int, float)):
+
+			new[x] = avg(p1[x],p2[x])
+
+		elif isinstance(p1[x], (list, dict, tuple)):
+
+			new[x] = breed_dictionary(p1[x],p2[x])
+
+		else:
+
+			if p1[x] != p2[x]:
+
+				print("Heuristic " + str(x) + " was inconsistent for parents!")
+
+			new[x] = p1[x]
+
+	return new
 
 def avg(n1, n2):
 
@@ -67,14 +95,18 @@ def commit_default_chevron():
 	default = Chevron()
 	with open('chevron_population.pkl', 'wb') as data:
 		pickle.dump(default, data, pickle.HIGHEST_PROTOCOL)
+	return default
 
 pylon = Pylon_AI()
 
 if(find_parents()):
 
-	print("Found parents")
+	cross_breed(pylon, parent1, parent2)
 
-	#cross_breed(this_pylon, parent1, parent2)
+else:
+
+	default = commit_default_chevron()
+	default.copy_chevron(pylon)
 
 run_game(maps.get(random_map()), [
 		Bot(Race.Protoss, pylon),

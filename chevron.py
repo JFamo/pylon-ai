@@ -99,6 +99,16 @@ class Chevron:
 		self.hr_techTime = pylon.hr_techTime
 		self.score = pylon.score
 
+	def copy_chevron(self, pylon):
+
+		pylon.hr_static = self.hr_static
+		pylon.hr_buildPriorities = self.hr_buildPriorities
+		pylon.hr_upgradePriorities = self.hr_upgradePriorities
+		pylon.hr_unitRatio = self.hr_unitRatio
+		pylon.hr_upgradeTime = self.hr_upgradeTime
+		pylon.hr_techTime = self.hr_techTime
+		pylon.score = self.score
+
 	def commit(self):
 		with open('chevron_population.pkl', 'ab') as data:
 			pickle.dump(self, data, pickle.HIGHEST_PROTOCOL)
