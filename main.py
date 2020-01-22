@@ -23,7 +23,7 @@ class Pylon_AI(sc2.BotAI):
 	hr_gatewayCoeffecient = 1 # Number of gateways per nexus
 	hr_stargateCoeffecient = 1 # Number of stargates per nexus
 	hr_roboticsCoeffecient = 0.5 # Number of robotics facilities per nexus
-	hr_expansionTime = 240 # Expansion time in seconds
+	hr_expansionTime = 260 # Expansion time in seconds
 	hr_workersPerBase = 22 # Number of workers per nexus
 	hr_buildDistance = 6.0 # Average build distance around target
 	hr_attackSupply = 50 # Supply to launch attack
@@ -102,7 +102,7 @@ class Pylon_AI(sc2.BotAI):
 		await self.activate_abilities()
 		if(self.time % 10 == 0) and self.supply_army > 0:
 			await self.amass()
-		if(self.time % 5 == 0) and self.supply_army > 0:
+		if self.supply_army > 0:
 			await self.attack()
 
 	# Attempt to build by dequeuing from build plans if I can afford it
@@ -193,9 +193,10 @@ class Pylon_AI(sc2.BotAI):
 		self.assess_upgrades()
 
 		# Escape case for misplaced pylons
-		if self.minerals > 600:
+		if self.minerals > 750:
 			if self.supply_left > 20 and self.units(GATEWAY).ready.idle.amount > 0:
 				self.buildPlans.enqueue(ZEALOT, 90)
+				self.buildPlans.enqueue(PROBE, 90)
 			else:
 				self.buildPlans.enqueue(PYLON, 100)
 			await self.chat_send("If you see this it means I got confused. help.")
