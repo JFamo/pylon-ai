@@ -70,8 +70,6 @@ def commit_default_chevron():
 
 pylon = Pylon_AI()
 
-commit_default_chevron()
-
 if(find_parents()):
 
 	print("Found parents")

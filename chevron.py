@@ -99,6 +99,6 @@ class Chevron:
 		self.hr_techTime = pylon.hr_techTime
 		self.score = pylon.score
 
-	def commit():
-		with open('chevron_population.pkl', 'wb') as data:
+	def commit(self):
+		with open('chevron_population.pkl', 'ab') as data:
 			pickle.dump(self, data, pickle.HIGHEST_PROTOCOL)
