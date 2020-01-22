@@ -112,3 +112,5 @@ class Chevron:
 	def commit(self):
 		with open('chevron_population.pkl', 'ab') as data:
 			pickle.dump(self, data, pickle.HIGHEST_PROTOCOL)
+
+		print("Committed " + self.name)

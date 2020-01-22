@@ -47,7 +47,7 @@ class Pylon_AI(sc2.BotAI):
 
 	# Bot AI class startup async
 	async def on_start_async(self):
-		await self.chat_send("My name is Pylon! My parents were " + self.parent1_name + " with a score of " + self.parent1_score + " and " + self.parent2_name + " with a score of " + self.parent2_score + ".")
+		await self.chat_send("My name is Pylon! My parents were " + self.parent1_name + " with a score of " + str(self.parent1_score) + " and " + self.parent2_name + " with a score of " + str(self.parent2_score) + ".")
 		await self.chat_send("(glhf)")
 
 	# Bot AI class step async
@@ -352,8 +352,6 @@ class Pylon_AI(sc2.BotAI):
 		self.buildPlans = None
 		self.armyUnits = None
 		self.pendingUpgrades = None
-
-		print(game_result)
 
 		c = Chevron()
 		c.copy_pylon(self)

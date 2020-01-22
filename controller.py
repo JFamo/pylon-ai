@@ -20,7 +20,7 @@ def population_chevrons(file):
 			except EOFError:
 				break
 
-def set_pylon_heritage(n1, n2, s1, s2):
+def set_pylon_heritage(pylon, n1, n2, s1, s2):
 
 	pylon.parent1_name = n1
 	pylon.parent2_name = n2
@@ -53,6 +53,24 @@ def find_parents():
 	else:
 		return [parent1, parent2]
 
+def cull_population(culling_threshold):
+
+	saved = []
+
+	for chevron in population_chevrons('chevron_population.pkl'):
+
+		if chevron.score >= culling_threshold:
+
+			saved.append(chevron)
+
+	default = commit_default_chevron()
+
+	for chevron in saved:
+
+		chevron.commit()
+
+	del saved
+
 def cross_breed(pylon, parent1, parent2):
 
 	pylon.hr_static = breed_dictionary(parent1.hr_static, parent2.hr_static)
@@ -62,7 +80,7 @@ def cross_breed(pylon, parent1, parent2):
 	pylon.hr_upgradeTime = breed_dictionary(parent1.hr_upgradeTime, parent2.hr_upgradeTime)
 	pylon.hr_techTime = breed_dictionary(parent1.hr_techTime, parent2.hr_techTime)
 
-	set_pylon_heritage(parent1.name, parent2.name, parent1.score, parent2.score)
+	set_pylon_heritage(pylon, parent1.name, parent2.name, parent1.score, parent2.score)
 
 def breed_dictionary(p1, p2):
 
@@ -125,20 +143,30 @@ def commit_default_chevron():
 		pickle.dump(default, data, pickle.HIGHEST_PROTOCOL)
 	return default
 
-pylon = Pylon_AI()
-parents = find_parents()
+def run_genetics():
 
-if(parents):
+	culling_threshold = 1500
+	cull_population(culling_threshold)
+	pylon = Pylon_AI()
+	parents = find_parents()
 
-	cross_breed(pylon, parents[0], parents[1])
+	if(parents):
 
-else:
+		cross_breed(pylon, parents[0], parents[1])
 
-	default = commit_default_chevron()
-	default.copy_chevron(pylon)
-	set_pylon_heritage(default.name, "nonexistent", default.score, 0)
+	else:
 
-run_game(maps.get(random_map()), [
-		Bot(Race.Protoss, pylon),
-		Computer(random_race(), Difficulty.Easy)
-	], realtime=True)
+		default = commit_default_chevron()
+		default.copy_chevron(pylon)
+		set_pylon_heritage(default.name, "nonexistent", default.score, 0)
+
+	return pylon
+
+while True:
+
+	this_pylon = run_genetics()
+
+	run_game(maps.get(random_map()), [
+			Bot(Race.Protoss, this_pylon),
+			Computer(random_race(), Difficulty.Easy)
+		], realtime=True)
