@@ -57,6 +57,10 @@ class Pylon_AI(sc2.BotAI):
 	#hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRARMORLEVEL2] = [CYBERNETICSCORE,540]
 	#hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRARMORLEVEL3] = [CYBERNETICSCORE,640]
 
+	# Expected timing of high tech
+	hr_techTime = {}
+	hr_techTime[STARGATE] = [300,450,600,750]
+
 	# Local Vars
 	buildPlans = Queue()
 	armyUnits = {UnitTypeId.ZEALOT, UnitTypeId.SENTRY, UnitTypeId.STALKER, UnitTypeId.VOIDRAY}
@@ -71,7 +75,7 @@ class Pylon_AI(sc2.BotAI):
 		await self.assess_builds()
 		await self.attempt_build()
 		await self.activate_abilities()
-		if(self.time % 30 == 0) and self.supply_army > 0:
+		if(self.time % 10 == 0) and self.supply_army > 0:
 			await self.amass()
 		if(self.time % 10 == 0) and self.supply_army > 0:
 			await self.attack()
@@ -118,7 +122,8 @@ class Pylon_AI(sc2.BotAI):
 		cyberneticscores = self.units(CYBERNETICSCORE).ready
 		if cyberneticscores.exists:
 			if self.getUnitCount(STARGATE) < (self.hr_stargateMultiplier * self.units(NEXUS).amount):
-				self.buildPlans.enqueue(STARGATE, self.hr_buildPriorities[STARGATE])
+				if self.get_tech_time(STARGATE) < self.time:
+					self.buildPlans.enqueue(STARGATE, self.hr_buildPriorities[STARGATE])
 
 		# Assess expansion by checking heuristic predictive expansion time
 		if (self.time / self.hr_expansionTime) > self.getUnitCount(NEXUS):
@@ -159,6 +164,15 @@ class Pylon_AI(sc2.BotAI):
 			else:
 				self.buildPlans.enqueue(PYLON, 100)
 			await self.chat_send("If you see this it means I got confused. help.")
+
+	def get_tech_time(self,unit):
+
+		if self.getUnitCount(unit) >= len(self.hr_techTime[unit]):
+			return self.hr_techTime[unit][len(self.hr_techTime[unit]) - 1]
+		elif not unit in self.hr_techTime:
+			return 0
+		else:
+			return self.hr_techTime[unit][self.getUnitCount(unit)]
 
 	def assess_army(self, unit, requirements):
 
@@ -257,7 +271,7 @@ class Pylon_AI(sc2.BotAI):
 		if self.supply_army < self.hr_attackSupply:
 			for s in self.units.of_type(self.armyUnits):
 				if s.is_idle:
-					s.move(self.main_base_ramp.top_center)
+					await self.do(s.move(self.main_base_ramp.top_center))
 
 	# Method to make attack decisions
 	async def attack(self):
