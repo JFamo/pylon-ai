@@ -26,6 +26,9 @@ class Queue:
 		out=' '.join(out)
 		return f'Head:{self.head}\nTail:{self.tail}\nQueue:{out}'
 
+	def brief(self):
+		return f'Head:{self.head}'
+
 	__repr__=__str__
 
 	def isEmpty(self):
@@ -69,7 +72,7 @@ class Queue:
 		self.count += 1
 
 		# Debug
-		print(self)
+		print(self.brief())
 
 	def dequeue(self):
 

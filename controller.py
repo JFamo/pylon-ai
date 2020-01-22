@@ -171,4 +171,4 @@ while True:
 	run_game(maps.get(random_map()), [
 			Bot(Race.Protoss, this_pylon),
 			Computer(random_race(), Difficulty.Easy)
-		], realtime=True)
+		], realtime=False)

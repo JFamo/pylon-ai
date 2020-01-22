@@ -62,14 +62,17 @@ class Pylon_AI(sc2.BotAI):
 
 	# Bot AI class step async
 	async def on_step(self, iteration):
-		if(self.time % 5 == 0):
+		if(int(self.time) % 10 == 0):
 			await self.distribute_workers()
-		await self.assess_builds()
-		await self.attempt_build()
-		await self.activate_abilities()
-		if(self.time % 10 == 0) and self.supply_army > 0:
+		if(int(self.time) % 3 == 0):	
+			await self.assess_builds()
+		if(int(self.time) % 3 == 0):	
+			await self.attempt_build()
+		if(int(self.time) % 3 == 0):	
+			await self.activate_abilities()
+		if(int(self.time) % 15 == 0) and self.supply_army > 0:
 			await self.amass()
-		if self.supply_army > 0:
+		if(int(self.time) % 3 == 0) and self.supply_army > 0:
 			await self.attack()
 
 	# Attempt to build by dequeuing from build plans if I can afford it
