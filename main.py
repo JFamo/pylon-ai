@@ -62,12 +62,17 @@ class Pylon_AI(sc2.BotAI):
 	armyUnits = {UnitTypeId.ZEALOT, UnitTypeId.SENTRY, UnitTypeId.STALKER, UnitTypeId.VOIDRAY}
 	pendingUpgrades = []
 
+	async def on_start_async(self):
+		await self.chat_send("(glhf)")
+
 	async def on_step(self, iteration):
 		if(self.time % 10 == 0):
 			await self.distribute_workers()
 		await self.assess_builds()
 		await self.attempt_build()
 		await self.activate_abilities()
+		if(self.time % 30 == 0) and self.supply_army > 0:
+			await self.amass()
 		if(self.time % 10 == 0) and self.supply_army > 0:
 			await self.attack()
 
@@ -149,7 +154,10 @@ class Pylon_AI(sc2.BotAI):
 
 		# Escape case for misplaced pylons
 		if self.minerals > 600:
-			self.buildPlans.enqueue(PYLON, 100)
+			if self.supply_left > 20 and self.units(GATEWAY).ready.idle.amount > 0:
+				self.buildPlans.enqueue(ZEALOT, 90)
+			else:
+				self.buildPlans.enqueue(PYLON, 100)
 			await self.chat_send("If you see this it means I got confused. help.")
 
 	def assess_army(self, unit, requirements):
@@ -243,6 +251,13 @@ class Pylon_AI(sc2.BotAI):
 			return random.choice(self.known_enemy_structures).position
 		else:
 			return self.enemy_start_locations[0]
+
+	# Method to amass army if not attacking
+	async def amass(self):
+		if self.supply_army < self.hr_attackSupply:
+			for s in self.units.of_type(self.armyUnits):
+				if s.is_idle:
+					s.move(self.main_base_ramp.top_center)
 
 	# Method to make attack decisions
 	async def attack(self):
