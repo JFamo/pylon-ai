@@ -45,6 +45,24 @@ class Pylon_AI(sc2.BotAI):
 		self.pendingUpgrades = []
 		self.score = 0
 
+		# Unit build structures
+		self.build_structures = {}
+		self.build_structures[ZEALOT] = GATEWAY
+		self.build_structures[STALKER] = GATEWAY
+		self.build_structures[SENTRY] = GATEWAY
+		self.build_structures[ADEPT] = GATEWAY
+		self.build_structures[VOIDRAY] = STARGATE
+		self.build_structures[PHOENIX] = STARGATE
+		self.build_structures[ORACLE] = STARGATE
+		self.build_structures[TEMPEST] = STARGATE
+		self.build_structures[CARRIER] = STARGATE
+		self.build_structures[OBSERVER] = ROBOTICSFACILITY
+		self.build_structures[IMMORTAL] = ROBOTICSFACILITY
+		self.build_structures[WARPPRISM] = ROBOTICSFACILITY
+		self.build_structures[COLOSSUS] = ROBOTICSFACILITY
+		self.build_structures[DISRUPTOR] = ROBOTICSFACILITY
+		self.build_structures[HIGHTEMPLAR] = GATEWAY
+		self.build_structures[DARKTEMPLAR] = GATEWAY
 
 	# Print my heuristics
 	def print_heuristics(self):
@@ -158,7 +176,19 @@ class Pylon_AI(sc2.BotAI):
 		self.assess_army(ZEALOT, [GATEWAY])
 		self.assess_army(STALKER, [GATEWAY, CYBERNETICSCORE])
 		self.assess_army(SENTRY, [GATEWAY, CYBERNETICSCORE])
-		self.assess_army(VOIDRAY, [GATEWAY, CYBERNETICSCORE, STARGATE])
+		self.assess_army(ADEPT, [GATEWAY, CYBERNETICSCORE])
+		self.assess_army(VOIDRAY, [STARGATE])
+		self.assess_army(PHOENIX, [STARGATE])
+		self.assess_army(ORACLE, [STARGATE])
+		self.assess_army(TEMPEST, [STARGATE, FLEETBEACON])
+		self.assess_army(CARRIER, [STARGATE, FLEETBEACON])
+		self.assess_army(OBSERVER, [ROBOTICSFACILITY])
+		self.assess_army(IMMORTAL, [ROBOTICSFACILITY])
+		self.assess_army(WARPPRISM, [ROBOTICSFACILITY])
+		self.assess_army(COLOSSUS, [ROBOTICSFACILITY, ROBOTICSBAY])
+		self.assess_army(DISRUPTOR, [ROBOTICSFACILITY, ROBOTICSBAY])
+		self.assess_army(HIGHTEMPLAR, [GATEWAY, TWILIGHTCOUNCIL, TEMPLARARCHIVE])
+		self.assess_army(DARKTEMPLAR, [GATEWAY, TWILIGHTCOUNCIL, DARKSHRINE])
 
 		self.assess_upgrades()
 
@@ -231,22 +261,10 @@ class Pylon_AI(sc2.BotAI):
 			await self.build(STARGATE, near=self.units(PYLON).ready.random)
 		if(unit == NEXUS):
 			await self.expand_now()
-		if(unit == ZEALOT):
-			gateways = self.units(GATEWAY).ready.idle
-			if gateways:
-				await self.do(gateways.first.train(ZEALOT))
-		if(unit == STALKER):
-			gateways = self.units(GATEWAY).ready.idle
-			if gateways:
-				await self.do(gateways.first.train(STALKER))
-		if(unit == SENTRY):
-			gateways = self.units(GATEWAY).ready.idle
-			if gateways:
-				await self.do(gateways.first.train(SENTRY))
-		if(unit == VOIDRAY):
-			stargates = self.units(STARGATE).ready.idle
-			if stargates:
-				await self.do(stargates.first.train(VOIDRAY))
+		if unit in self.hr_unitRatio:
+			structures = self.units(self.build_structures[unit]).ready.idle
+			if structures:
+				await self.do(structures.first.train(unit))
 		if(unit == ASSIMILATOR):
 			await self.build_assimilator()
 		# Handle tech structures

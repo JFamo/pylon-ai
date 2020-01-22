@@ -35,21 +35,21 @@ class Chevron:
 
 		# Supply ratio of units for build
 		self.hr_unitRatio = {}
-		self.hr_unitRatio[ZEALOT] = 0.15
-		self.hr_unitRatio[STALKER] = 0.30
-		self.hr_unitRatio[SENTRY] = 0.05
-		self.hr_unitRatio[VOIDRAY] = 0.15
+		self.hr_unitRatio[ZEALOT] = 0.1
+		self.hr_unitRatio[STALKER] = 0.1
+		self.hr_unitRatio[SENTRY] = 0.1
+		self.hr_unitRatio[VOIDRAY] = 0.1
 		self.hr_unitRatio[COLOSSUS] = 0.1
 		self.hr_unitRatio[HIGHTEMPLAR] = 0.1
-		self.hr_unitRatio[DARKTEMPLAR] = 0
-		self.hr_unitRatio[PHOENIX] = 0
-		self.hr_unitRatio[CARRIER] = 0
-		self.hr_unitRatio[WARPPRISM] = 0
-		self.hr_unitRatio[OBSERVER] = 0
+		self.hr_unitRatio[DARKTEMPLAR] = 0.1
+		self.hr_unitRatio[PHOENIX] = 0.1
+		self.hr_unitRatio[CARRIER] = 0.1
+		self.hr_unitRatio[WARPPRISM] = 0.1
+		self.hr_unitRatio[OBSERVER] = 0.1
 		self.hr_unitRatio[IMMORTAL] = 0.1
-		self.hr_unitRatio[ADEPT] = 0
-		self.hr_unitRatio[ORACLE] = 0
-		self.hr_unitRatio[TEMPEST] = 0
+		self.hr_unitRatio[ADEPT] = 0.1
+		self.hr_unitRatio[ORACLE] = 0.1
+		self.hr_unitRatio[TEMPEST] = 0.1
 
 		# Expected timing of upgrades
 		self.hr_upgradeTime = {}
