@@ -18,6 +18,7 @@ class Pylon_AI(sc2.BotAI):
 	# Heuristics
 	hr_supplyTrigger = 5 # Remaining supply to build pylon
 	hr_gatewayMultiplier = 2 # Number of gateways per nexus
+	hr_stargateMultiplier = 2 # Number of stargates per nexus
 	hr_expansionTime = 240 # Expansion time in seconds
 	hr_workersPerBase = 22 # Number of workers per nexus
 	hr_buildDistance = 6.0 # Average build distance around target
@@ -27,37 +28,38 @@ class Pylon_AI(sc2.BotAI):
 	hr_defendDistance = 25.0 # Distance to nexus to defend
 
 	# Priority values for all units and structures
-	hr_buildPriorities = {PROBE: 1, NEXUS: 10, PYLON: 4, GATEWAY: 3, ZEALOT: 1, SENTRY: 1, STALKER: 1, ASSIMILATOR: 2, CYBERNETICSCORE: 5, FORGE: 5} # This should be situational, generalize for now
+	hr_buildPriorities = {PROBE: 1, NEXUS: 10, PYLON: 4, GATEWAY: 3, STARGATE: 3, ZEALOT: 1, SENTRY: 1, STALKER: 1, ASSIMILATOR: 2, CYBERNETICSCORE: 5, FORGE: 5, VOIDRAY: 2} # This should be situational, generalize for now
 	# Priority values for all upgrades
 	hr_upgradePriorities = {"DEFAULT": 5}
 
 	# Supply ratio of units for build
 	hr_unitRatio = {}
-	hr_unitRatio[ZEALOT] = 0.25
+	hr_unitRatio[ZEALOT] = 0.20
 	hr_unitRatio[STALKER] = 0.40
-	hr_unitRatio[SENTRY] = 0.1
+	hr_unitRatio[SENTRY] = 0.05
+	hr_unitRatio[VOIDRAY] = 0.15
 
 	# Expected timing of upgrades
 	hr_upgradeTime = {}
 	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDWEAPONSLEVEL1] = [FORGE,240]
-	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDARMORLEVEL1] = [FORGE,300]
+	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDARMORLEVEL1] = [FORGE,340]
 	#hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDWEAPONSLEVEL2] = [FORGE,400]
 	#hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDARMORLEVEL2] = [FORGE,440]
 	#hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDWEAPONSLEVEL3] = [FORGE,600]
 	#hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDARMORLEVEL3] = [FORGE,640]
-	hr_upgradeTime[FORGERESEARCH_PROTOSSSHIELDSLEVEL1] = [FORGE,350]
+	hr_upgradeTime[FORGERESEARCH_PROTOSSSHIELDSLEVEL1] = [FORGE,440]
 	#hr_upgradeTime[FORGERESEARCH_PROTOSSSHIELDSLEVEL2] = [FORGE,500]
 	#hr_upgradeTime[FORGERESEARCH_PROTOSSSHIELDSLEVEL3] = [FORGE,700]
-	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRWEAPONSLEVEL1] = [CYBERNETICSCORE,550]
+	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRWEAPONSLEVEL1] = [CYBERNETICSCORE,440]
 	#hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRWEAPONSLEVEL2] = [CYBERNETICSCORE,650]
 	#hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRWEAPONSLEVEL3] = [CYBERNETICSCORE,750]
-	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRARMORLEVEL1] = [CYBERNETICSCORE,440]
+	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRARMORLEVEL1] = [CYBERNETICSCORE,540]
 	#hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRARMORLEVEL2] = [CYBERNETICSCORE,540]
 	#hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRARMORLEVEL3] = [CYBERNETICSCORE,640]
 
 	# Local Vars
 	buildPlans = Queue()
-	armyUnits = {UnitTypeId.ZEALOT, UnitTypeId.SENTRY, UnitTypeId.STALKER}
+	armyUnits = {UnitTypeId.ZEALOT, UnitTypeId.SENTRY, UnitTypeId.STALKER, UnitTypeId.VOIDRAY}
 	pendingUpgrades = []
 
 	async def on_step(self, iteration):
@@ -107,6 +109,12 @@ class Pylon_AI(sc2.BotAI):
 			if self.getUnitCount(GATEWAY) < (self.hr_gatewayMultiplier * self.units(NEXUS).amount):
 				self.buildPlans.enqueue(GATEWAY, self.hr_buildPriorities[GATEWAY])
 
+		# Assess stargates checking for complete pylon and using heuristic threshold based on num of bases
+		cyberneticscores = self.units(CYBERNETICSCORE).ready
+		if cyberneticscores.exists:
+			if self.getUnitCount(STARGATE) < (self.hr_stargateMultiplier * self.units(NEXUS).amount):
+				self.buildPlans.enqueue(STARGATE, self.hr_buildPriorities[STARGATE])
+
 		# Assess expansion by checking heuristic predictive expansion time
 		if (self.time / self.hr_expansionTime) > self.getUnitCount(NEXUS):
 			self.buildPlans.enqueue(NEXUS, self.hr_buildPriorities[NEXUS])
@@ -135,6 +143,7 @@ class Pylon_AI(sc2.BotAI):
 		self.assess_army(ZEALOT, [GATEWAY])
 		self.assess_army(STALKER, [GATEWAY, CYBERNETICSCORE])
 		self.assess_army(SENTRY, [GATEWAY, CYBERNETICSCORE])
+		self.assess_army(VOIDRAY, [GATEWAY, CYBERNETICSCORE, STARGATE])
 
 		self.assess_upgrades()
 
@@ -174,6 +183,8 @@ class Pylon_AI(sc2.BotAI):
 			await  self.build_pylons()
 		if(unit == GATEWAY):
 			await self.build(GATEWAY, near=self.units(PYLON).ready.random)
+		if(unit == STARGATE):
+			await self.build(STARGATE, near=self.units(PYLON).ready.random)
 		if(unit == NEXUS):
 			await self.expand_now()
 		if(unit == ZEALOT):
@@ -188,6 +199,10 @@ class Pylon_AI(sc2.BotAI):
 			gateways = self.units(GATEWAY).ready.idle
 			if gateways:
 				await self.do(gateways.first.train(SENTRY))
+		if(unit == VOIDRAY):
+			stargates = self.units(STARGATE).ready.idle
+			if stargates:
+				await self.do(stargates.first.train(VOIDRAY))
 		if(unit == ASSIMILATOR):
 			await self.build_assimilator()
 		if(unit == CYBERNETICSCORE):
