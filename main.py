@@ -1,5 +1,9 @@
 import sc2
 import random
+try:
+    import cPickle as pickle
+except ModuleNotFoundError:
+    import pickle
 
 from queue import *
 from sc2 import run_game, maps, Race, Difficulty
@@ -7,6 +11,7 @@ from sc2.position import Point2
 from sc2.player import Bot, Computer
 from sc2.constants import *
 from sc2.game_data import AbilityData, GameData
+from sc2.game_state import GameState
 from sc2.ids.unit_typeid import UnitTypeId
 from sc2.unit import Unit
 from sc2.units import Units
@@ -88,6 +93,7 @@ class Pylon_AI(sc2.BotAI):
 	buildPlans = Queue()
 	armyUnits = {UnitTypeId.ZEALOT, UnitTypeId.SENTRY, UnitTypeId.STALKER, UnitTypeId.VOIDRAY, UnitTypeId.COLOSSUS, UnitTypeId.HIGHTEMPLAR, UnitTypeId.DARKTEMPLAR, UnitTypeId.PHOENIX, UnitTypeId.CARRIER, UnitTypeId.DISRUPTOR, UnitTypeId.WARPPRISM, UnitTypeId.OBSERVER, UnitTypeId.IMMORTAL, UnitTypeId.ARCHON, UnitTypeId.ADEPT, UnitTypeId.ORACLE, UnitTypeId.TEMPEST}
 	pendingUpgrades = []
+	score = 0
 
 	# Bot AI class startup async
 	async def on_start_async(self):
@@ -388,3 +394,12 @@ class Pylon_AI(sc2.BotAI):
 	def get_robotics_multiplier(self):
 
 		return self.hr_roboticsConstant + (self.hr_roboticsCoeffecient * (self.units(NEXUS).amount - 1))
+
+	# On end of game, save to population
+	def on_end(self, game_result):
+		self.score = self.state.score.score
+		del self.buildPlans
+		del self.armyUnits
+		del self.pendingUpgrades
+		with open('pylon_population.pkl', 'wb') as data:
+			pickle.dump(self, data, pickle.HIGHEST_PROTOCOL)
