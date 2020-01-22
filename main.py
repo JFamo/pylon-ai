@@ -401,5 +401,8 @@ class Pylon_AI(sc2.BotAI):
 		self.buildPlans = None
 		self.armyUnits = None
 		self.pendingUpgrades = None
+
+		print(game_result)
+
 		with open('pylon_population.pkl', 'wb') as data:
 			pickle.dump(self, data, pickle.HIGHEST_PROTOCOL)

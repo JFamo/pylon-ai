@@ -1,4 +1,5 @@
 import sc2
+import random
 try:
     import cPickle as pickle
 except ModuleNotFoundError:
@@ -43,19 +44,30 @@ def find_parents():
 
 def cross_breed(pylon, parent1, parent2):
 
+	return None
 	# TODO ~ avg all heuristics in child
 
 def avg(n1, n2):
 
 	return (n1 + n2) / 2
 
+def random_map():
+
+	return random.choice(["TritonLE","AcropolisLE","EphemeronLE","ThunderbirdLE","WintersGateLE","WorldofSleepersLE"])
+
+def random_race():
+
+	return random.choice([Race.Terran, Race.Protoss, Race.Zerg])
+
 this_pylon = Pylon_AI()
+with open('pylon_population.pkl', 'wb') as data:
+	pickle.dump(this_pylon, data, pickle.HIGHEST_PROTOCOL)
 
 if(find_parents()):
 
 	cross_breed(this_pylon, parent1, parent2)
 
-run_game(maps.get("TritonLE"), [
+run_game(maps.get(random_map()), [
 		Bot(Race.Protoss, this_pylon),
-		Computer(Race.Terran, Difficulty.Easy)
+		Computer(random_race(), Difficulty.Easy)
 	], realtime=True)
