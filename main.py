@@ -6,6 +6,7 @@ except ModuleNotFoundError:
 	import pickle
 
 from queue import *
+from chevron import Chevron
 from sc2 import run_game, maps, Race, Difficulty
 from sc2.position import Point2
 from sc2.player import Bot, Computer
@@ -23,20 +24,21 @@ class Pylon_AI(sc2.BotAI):
 	def __init__(self):
 
 		# Heuristics
-		self.hr_supplyTrigger = 5 # Remaining supply to build pylon
-		self.hr_gatewayConstant = 2 # Number of gateways for first nexus
-		self.hr_stargateConstant = 2 # Number of stargates for first nexus
-		self.hr_roboticsConstant = 1 # Number of robotics facilities for first nexus
-		self.hr_gatewayCoeffecient = 1 # Number of gateways per nexus
-		self.hr_stargateCoeffecient = 1 # Number of stargates per nexus
-		self.hr_roboticsCoeffecient = 0.5 # Number of robotics facilities per nexus
-		self.hr_expansionTime = 260 # Expansion time in seconds
-		self.hr_workersPerBase = 22 # Number of workers per nexus
-		self.hr_buildDistance = 6.0 # Average build distance around target
-		self.hr_attackSupply = 30 # Supply to launch attack
-		self.hr_defendSupply = 10 # Supply to attempt defense
-		self.hr_gasDetector = 10.0 # Range to detect assimilators
-		self.hr_defendDistance = 25.0 # Distance to nexus to defend
+		self.hr_static = {}
+		self.hr_static['supplyTrigger'] = 5 # Remaining supply to build pylon
+		self.hr_static['gatewayConstant'] = 2 # Number of gateways for first nexus
+		self.hr_static['stargateConstant'] = 2 # Number of stargates for first nexus
+		self.hr_static['roboticsConstant'] = 1 # Number of robotics facilities for first nexus
+		self.hr_static['gatewayCoeffecient'] = 1 # Number of gateways per nexus
+		self.hr_static['stargateCoeffecient'] = 1 # Number of stargates per nexus
+		self.hr_static['roboticsCoeffecient'] = 0.5 # Number of robotics facilities per nexus
+		self.hr_static['expansionTime'] = 260 # Expansion time in seconds
+		self.hr_static['workersPerBase'] = 22 # Number of workers per nexus
+		self.hr_static['buildDistance'] = 6.0 # Average build distance around target
+		self.hr_static['attackSupply'] = 30 # Supply to launch attack
+		self.hr_static['defendSupply'] = 10 # Supply to attempt defense
+		self.hr_static['gasDetector'] = 10.0 # Range to detect assimilators
+		self.hr_static['defendDistance'] = 25.0 # Distance to nexus to defend
 
 		# Priority values for all units and structures
 		self.hr_buildPriorities = {PROBE: 1, NEXUS: 10, PYLON: 4, GATEWAY: 3, STARGATE: 3, ZEALOT: 1, SENTRY: 1, STALKER: 1, ASSIMILATOR: 2, CYBERNETICSCORE: 5, FORGE: 5, VOIDRAY: 2, COLOSSUS: 2, FLEETBEACON: 4, TWILIGHTCOUNCIL: 5, PHOTONCANNON: 2, TEMPLARARCHIVE: 4, DARKSHRINE: 4, ROBOTICSBAY: 4, ROBOTICSFACILITY: 3, HIGHTEMPLAR: 2, DARKTEMPLAR: 2, PHOENIX: 2.5, CARRIER: 3, WARPPRISM: 2, OBSERVER: 4, IMMORTAL: 2, ADEPT: 1, ORACLE: 1, TEMPEST: 2, DISRUPTOR: 1} # This should be situational, generalize for now
@@ -143,11 +145,11 @@ class Pylon_AI(sc2.BotAI):
 	async def assess_builds(self):
 
 		# Assess workers using multiplier by num of bases
-		if self.getUnitCount(PROBE) < self.hr_workersPerBase * self.units(NEXUS).amount:
+		if self.getUnitCount(PROBE) < self.hr_static['workersPerBase'] * self.units(NEXUS).amount:
 			self.buildPlans.enqueue(PROBE, self.hr_buildPriorities[PROBE])
 
 		# Assess pylons using heurustic threshold approaching max supply
-		if self.supply_left < self.hr_supplyTrigger and not self.already_pending(PYLON) and not self.buildPlans.contains(PYLON):
+		if self.supply_left < self.hr_static['supplyTrigger'] and not self.already_pending(PYLON) and not self.buildPlans.contains(PYLON):
 			self.buildPlans.enqueue(PYLON, self.hr_buildPriorities[PYLON])
 
 		# Assess gateways checking for complete pylon and using heuristic threshold based on num of bases
@@ -171,13 +173,13 @@ class Pylon_AI(sc2.BotAI):
 					self.buildPlans.enqueue(ROBOTICSFACILITY, self.hr_buildPriorities[ROBOTICSFACILITY])
 
 		# Assess expansion by checking heuristic predictive expansion time
-		if (self.time / self.hr_expansionTime) > self.getUnitCount(NEXUS):
+		if (self.time / self.hr_static['expansionTime']) > self.getUnitCount(NEXUS):
 			self.buildPlans.enqueue(NEXUS, self.hr_buildPriorities[NEXUS])
 
 		# Assess assimilator build by checking for empty gas by Nexus
 		openGeyserCount = 0
 		for nexus in self.units(NEXUS).ready:
-			for vespene in self.state.vespene_geyser.closer_than(self.hr_gasDetector, nexus):
+			for vespene in self.state.vespene_geyser.closer_than(self.hr_static['gasDetector'], nexus):
 				if not self.units(ASSIMILATOR).closer_than(1.0, vespene).exists:
 					openGeyserCount += 1
 		if(openGeyserCount > self.buildPlans.countOf(ASSIMILATOR)):
@@ -308,7 +310,7 @@ class Pylon_AI(sc2.BotAI):
 	# Method to build gas on open geyser
 	async def build_assimilator(self):
 		for nexus in self.units(NEXUS).ready:
-			vespenes = self.state.vespene_geyser.closer_than(self.hr_gasDetector, nexus)
+			vespenes = self.state.vespene_geyser.closer_than(self.hr_static['gasDetector'], nexus)
 			for vespene in vespenes:
 				worker = self.select_build_worker(vespene.position)
 				if worker is None:
@@ -327,21 +329,21 @@ class Pylon_AI(sc2.BotAI):
 
 	# Method to amass army if not attacking
 	async def amass(self):
-		if self.supply_army < self.hr_attackSupply:
+		if self.supply_army < self.hr_static['attackSupply']:
 			for s in self.units.of_type(self.armyUnits):
 				if not s.is_attacking:
 					await self.do(s.move(self.main_base_ramp.top_center))
 
 	# Method to make attack decisions
 	async def attack(self):
-		if self.supply_army > self.hr_attackSupply:
+		if self.supply_army > self.hr_static['attackSupply']:
 			for s in self.units.of_type(self.armyUnits):
 				await self.do(s.attack(self.find_target(self.state)))
 
-		elif self.supply_army > self.hr_defendSupply:
+		elif self.supply_army > self.hr_static['defendSupply']:
 			if len(self.known_enemy_units) > 0:
 				nearest_enemy = self.enemy_near_nexus()
-				if nearest_enemy[0] < self.hr_defendDistance:
+				if nearest_enemy[0] < self.hr_static['defendDistance']:
 					for s in self.units.of_type(self.armyUnits):
 						await self.do(s.attack(nearest_enemy[1].position))
 
@@ -368,9 +370,9 @@ class Pylon_AI(sc2.BotAI):
 	# Generate pylon placement position
 	def generate_pylon_position(self):
 		#if self.units(PYLON).amount == 0 :-
-		#	return self.main_base_ramp.top_center.random_on_distance(self.hr_buildDistance)
+		#	return self.main_base_ramp.top_center.random_on_distance(self.hr_static['buildDistance'])
 		#else :
-			nexusPosition = self.units(NEXUS).random.position.to2.random_on_distance(self.hr_buildDistance)
+			nexusPosition = self.units(NEXUS).random.position.to2.random_on_distance(self.hr_static['buildDistance'])
 			closest = None
 			closest_dist = 9000
 			for mineral in self.state.mineral_field:
@@ -385,17 +387,17 @@ class Pylon_AI(sc2.BotAI):
 	# Return expected number of gateways
 	def get_gateway_multiplier(self):
 
-		return self.hr_gatewayConstant + (self.hr_gatewayCoeffecient * (self.units(NEXUS).amount - 1))
+		return self.hr_static['gatewayConstant'] + (self.hr_static['gatewayCoeffecient'] * (self.units(NEXUS).amount - 1))
 
 	# Return expected number of stargates
 	def get_stargate_multiplier(self):
 
-		return self.hr_stargateConstant + (self.hr_stargateCoeffecient * (self.units(NEXUS).amount - 1))
+		return self.hr_static['stargateConstant'] + (self.hr_static['stargateCoeffecient'] * (self.units(NEXUS).amount - 1))
 
 	# Return expected number of robotic facilities
 	def get_robotics_multiplier(self):
 
-		return self.hr_roboticsConstant + (self.hr_roboticsCoeffecient * (self.units(NEXUS).amount - 1))
+		return self.hr_static['roboticsConstant'] + (self.hr_static['roboticsCoeffecient'] * (self.units(NEXUS).amount - 1))
 
 	# On end of game, save to population
 	def on_end(self, game_result):
