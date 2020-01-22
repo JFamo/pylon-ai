@@ -45,6 +45,16 @@ class Pylon_AI(sc2.BotAI):
 		self.pendingUpgrades = []
 		self.score = 0
 
+
+	# Print my heuristics
+	def print_heuristics(self):
+		print(str(self.hr_static))
+		print(str(self.hr_buildPriorities))
+		print(str(self.hr_upgradePriorities))
+		print(str(self.hr_unitRatio))
+		print(str(self.hr_upgradeTime))
+		print(str(self.hr_techTime))
+
 	# Bot AI class startup async
 	async def on_start_async(self):
 		await self.chat_send("My name is Pylon! My parents were " + self.parent1_name + " with a score of " + str(self.parent1_score) + " and " + self.parent2_name + " with a score of " + str(self.parent2_score) + ".")

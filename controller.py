@@ -160,6 +160,8 @@ def run_genetics():
 		default.copy_chevron(pylon)
 		set_pylon_heritage(default.name, "nonexistent", default.score, 0)
 
+	pylon.print_heuristics()
+
 	return pylon
 
 while True:

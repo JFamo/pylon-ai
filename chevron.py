@@ -23,7 +23,7 @@ class Chevron:
 		self.hr_static['expansionTime'] = 260 # Expansion time in seconds
 		self.hr_static['workersPerBase'] = 22 # Number of workers per nexus
 		self.hr_static['buildDistance'] = 6.0 # Average build distance around target
-		self.hr_static['attackSupply'] = 30 # Supply to launch attack
+		self.hr_static['attackSupply'] = 40 # Supply to launch attack
 		self.hr_static['defendSupply'] = 10 # Supply to attempt defense
 		self.hr_static['gasDetector'] = 10.0 # Range to detect assimilators
 		self.hr_static['defendDistance'] = 25.0 # Distance to nexus to defend
