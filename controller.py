@@ -158,7 +158,7 @@ def run_genetics():
 
 		default = commit_default_chevron()
 		default.copy_chevron(pylon)
-		set_pylon_heritage(default.name, "nonexistent", default.score, 0)
+		set_pylon_heritage(pylon, default.name, "nonexistent", default.score, 0)
 
 	pylon.print_heuristics()
 
