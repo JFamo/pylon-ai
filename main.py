@@ -18,7 +18,8 @@ class Pylon_AI(sc2.BotAI):
 	# Heuristics
 	hr_supplyTrigger = 5 # Remaining supply to build pylon
 	hr_gatewayMultiplier = 2 # Number of gateways per nexus
-	hr_stargateMultiplier = 2 # Number of stargates per nexus
+	hr_stargateMultiplier = 1.5 # Number of stargates per nexus
+	hr_roboticsMultiplier = 1 # Number of robotics facilities per nexus
 	hr_expansionTime = 240 # Expansion time in seconds
 	hr_workersPerBase = 22 # Number of workers per nexus
 	hr_buildDistance = 6.0 # Average build distance around target
@@ -28,42 +29,61 @@ class Pylon_AI(sc2.BotAI):
 	hr_defendDistance = 25.0 # Distance to nexus to defend
 
 	# Priority values for all units and structures
-	hr_buildPriorities = {PROBE: 1, NEXUS: 10, PYLON: 4, GATEWAY: 3, STARGATE: 3, ZEALOT: 1, SENTRY: 1, STALKER: 1, ASSIMILATOR: 2, CYBERNETICSCORE: 5, FORGE: 5, VOIDRAY: 2} # This should be situational, generalize for now
+	hr_buildPriorities = {PROBE: 1, NEXUS: 10, PYLON: 4, GATEWAY: 3, STARGATE: 3, ZEALOT: 1, SENTRY: 1, STALKER: 1, ASSIMILATOR: 2, CYBERNETICSCORE: 5, FORGE: 5, VOIDRAY: 2, COLOSSUS: 2, FLEETBEACON: 4, TWILIGHTCOUNCIL: 5, PHOTONCANNON: 2, TEMPLARARCHIVE: 4, DARKSHRINE: 4, ROBOTICSBAY: 4, ROBOTICSFACILITY: 3, HIGHTEMPLAR: 2, DARKTEMPLAR: 2, PHOENIX: 2.5, CARRIER: 3, WARPPRISM: 2, OBSERVER: 4, IMMORTAL: 2, ADEPT: 1, ORACLE: 1, TEMPEST: 2, DISRUPTOR: 1} # This should be situational, generalize for now
 	# Priority values for all upgrades
 	hr_upgradePriorities = {"DEFAULT": 5}
 
 	# Supply ratio of units for build
 	hr_unitRatio = {}
-	hr_unitRatio[ZEALOT] = 0.20
-	hr_unitRatio[STALKER] = 0.40
+	hr_unitRatio[ZEALOT] = 0.15
+	hr_unitRatio[STALKER] = 0.30
 	hr_unitRatio[SENTRY] = 0.05
 	hr_unitRatio[VOIDRAY] = 0.15
+	hr_unitRatio[COLOSSUS] = 0.1
+	hr_unitRatio[HIGHTEMPLAR] = 0.1
+	hr_unitRatio[DARKTEMPLAR] = 0
+	hr_unitRatio[PHOENIX] = 0
+	hr_unitRatio[CARRIER] = 0
+	hr_unitRatio[WARPPRISM] = 0
+	hr_unitRatio[OBSERVER] = 0
+	hr_unitRatio[IMMORTAL] = 0.1
+	hr_unitRatio[ADEPT] = 0
+	hr_unitRatio[ORACLE] = 0
+	hr_unitRatio[TEMPEST] = 0
 
 	# Expected timing of upgrades
 	hr_upgradeTime = {}
 	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDWEAPONSLEVEL1] = [FORGE,240]
 	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDARMORLEVEL1] = [FORGE,340]
-	#hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDWEAPONSLEVEL2] = [FORGE,400]
-	#hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDARMORLEVEL2] = [FORGE,440]
-	#hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDWEAPONSLEVEL3] = [FORGE,600]
-	#hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDARMORLEVEL3] = [FORGE,640]
+	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDWEAPONSLEVEL2] = [FORGE,600]
+	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDARMORLEVEL2] = [FORGE,700]
+	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDWEAPONSLEVEL3] = [FORGE,800]
+	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDARMORLEVEL3] = [FORGE,900]
 	hr_upgradeTime[FORGERESEARCH_PROTOSSSHIELDSLEVEL1] = [FORGE,440]
-	#hr_upgradeTime[FORGERESEARCH_PROTOSSSHIELDSLEVEL2] = [FORGE,500]
-	#hr_upgradeTime[FORGERESEARCH_PROTOSSSHIELDSLEVEL3] = [FORGE,700]
+	hr_upgradeTime[FORGERESEARCH_PROTOSSSHIELDSLEVEL2] = [FORGE,650]
+	hr_upgradeTime[FORGERESEARCH_PROTOSSSHIELDSLEVEL3] = [FORGE,750]
 	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRWEAPONSLEVEL1] = [CYBERNETICSCORE,440]
-	#hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRWEAPONSLEVEL2] = [CYBERNETICSCORE,650]
-	#hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRWEAPONSLEVEL3] = [CYBERNETICSCORE,750]
+	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRWEAPONSLEVEL2] = [CYBERNETICSCORE,1000]
+	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRWEAPONSLEVEL3] = [CYBERNETICSCORE,1200]
 	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRARMORLEVEL1] = [CYBERNETICSCORE,540]
-	#hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRARMORLEVEL2] = [CYBERNETICSCORE,540]
-	#hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRARMORLEVEL3] = [CYBERNETICSCORE,640]
+	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRARMORLEVEL2] = [CYBERNETICSCORE,1100]
+	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRARMORLEVEL3] = [CYBERNETICSCORE,1300]
 
 	# Expected timing of high tech
 	hr_techTime = {}
+	hr_techTime[FORGE] = [0]
+	hr_techTime[CYBERNETICSCORE] = [0]
 	hr_techTime[STARGATE] = [300,450,600,750]
+	hr_techTime[ROBOTICSFACILITY] = [400,550,800,1000]
+	hr_techTime[TWILIGHTCOUNCIL] = [500]
+	hr_techTime[FLEETBEACON] = [900]
+	hr_techTime[ROBOTICSBAY] = [800]
+	hr_techTime[TEMPLARARCHIVE] = [1100]
+	hr_techTime[DARKSHRINE] = [1200]
 
 	# Local Vars
 	buildPlans = Queue()
-	armyUnits = {UnitTypeId.ZEALOT, UnitTypeId.SENTRY, UnitTypeId.STALKER, UnitTypeId.VOIDRAY}
+	armyUnits = {UnitTypeId.ZEALOT, UnitTypeId.SENTRY, UnitTypeId.STALKER, UnitTypeId.VOIDRAY, UnitTypeId.COLOSSUS, UnitTypeId.HIGHTEMPLAR, UnitTypeId.DARKTEMPLAR, UnitTypeId.PHOENIX, UnitTypeId.CARRIER, UnitTypeId.DISRUPTOR, UnitTypeId.WARPPRISM, UnitTypeId.OBSERVER, UnitTypeId.IMMORTAL, UnitTypeId.ARCHON, UnitTypeId.ADEPT,, UnitTypeId.ORACLE, UnitTypeId.TEMPEST}
 	pendingUpgrades = []
 
 	async def on_start_async(self):
@@ -125,6 +145,13 @@ class Pylon_AI(sc2.BotAI):
 				if self.get_tech_time(STARGATE) < self.time:
 					self.buildPlans.enqueue(STARGATE, self.hr_buildPriorities[STARGATE])
 
+		# Assess robotics facilities checking for complete pylon and using heuristic threshold based on num of bases
+		cyberneticscores = self.units(CYBERNETICSCORE).ready
+		if cyberneticscores.exists:
+			if self.getUnitCount(ROBOTICSFACILITY) < (self.hr_roboticsMultiplier * self.units(NEXUS).amount):
+				if self.get_tech_time(ROBOTICSFACILITY) < self.time:
+					self.buildPlans.enqueue(ROBOTICSFACILITY, self.hr_buildPriorities[ROBOTICSFACILITY])
+
 		# Assess expansion by checking heuristic predictive expansion time
 		if (self.time / self.hr_expansionTime) > self.getUnitCount(NEXUS):
 			self.buildPlans.enqueue(NEXUS, self.hr_buildPriorities[NEXUS])
@@ -140,15 +167,13 @@ class Pylon_AI(sc2.BotAI):
 		elif(self.buildPlans.peek() == ASSIMILATOR):
 			self.buildPlans.dequeue()
 
-		# Assess cybernetics core build
-		if self.units(GATEWAY).ready.exists:
-			if self.getUnitCount(CYBERNETICSCORE) < 1:
-				self.buildPlans.enqueue(CYBERNETICSCORE, self.hr_buildPriorities[CYBERNETICSCORE])
-
-		# Assess forge build
-		if self.units(GATEWAY).ready.exists:
-			if self.getUnitCount(FORGE) < 1:
-				self.buildPlans.enqueue(FORGE, self.hr_buildPriorities[FORGE])
+		self.assess_techstructure(FORGE, [GATEWAY])
+		self.assess_techstructure(CYBERNETICSCORE, [GATEWAY])
+		self.assess_techstructure(ROBOTICSBAY, [ROBOTICSFACILITY])
+		self.assess_techstructure(FLEETBEACON, [STARGATE])
+		self.assess_techstructure(TEMPLARARCHIVE, [TWILIGHTCOUNCIL])
+		self.assess_techstructure(TWILIGHTCOUNCIL, [CYBERNETICSCORE])
+		self.assess_techstructure(DARKSHRINE, [TWILIGHTCOUNCIL])
 
 		self.assess_army(ZEALOT, [GATEWAY])
 		self.assess_army(STALKER, [GATEWAY, CYBERNETICSCORE])
@@ -185,6 +210,18 @@ class Pylon_AI(sc2.BotAI):
 		if meet_requirements:
 			if (self._game_data.units[unit.value]._proto.food_required * self.getUnitCount(unit)) / self.supply_cap < self.hr_unitRatio[unit] :
 					self.buildPlans.enqueue(unit, self.hr_buildPriorities[unit])
+
+	def assess_techstructure(self, unit, requirements):
+
+		meet_requirements = True
+
+		for structure in requirements:
+			if not self.units(structure).ready.exists:
+				meet_requirements = False
+
+		if meet_requirements:
+			if self.getUnitCount(unit) < 1 and self.time > self.get_tech_time(unit):
+				self.buildPlans.enqueue(unit, self.hr_buildPriorities[unit])
 
 	def assess_upgrades(self):
 
@@ -227,10 +264,9 @@ class Pylon_AI(sc2.BotAI):
 				await self.do(stargates.first.train(VOIDRAY))
 		if(unit == ASSIMILATOR):
 			await self.build_assimilator()
-		if(unit == CYBERNETICSCORE):
-			await self.build(CYBERNETICSCORE, near=self.units(PYLON).ready.random)
-		if(unit == FORGE):
-			await self.build(FORGE, near=self.units(PYLON).ready.random)
+		# Handle tech structures
+		if unit in self.hr_techTime:
+			await self.build(unit, near=self.units(PYLON).ready.random)
 		# Handle upgrades
 		if unit in self.hr_upgradeTime:
 			buildings = self.units(self.hr_upgradeTime[unit][0]).ready
