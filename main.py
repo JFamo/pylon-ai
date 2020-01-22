@@ -17,9 +17,12 @@ class Pylon_AI(sc2.BotAI):
 
 	# Heuristics
 	hr_supplyTrigger = 5 # Remaining supply to build pylon
-	hr_gatewayMultiplier = 2 # Number of gateways per nexus
-	hr_stargateMultiplier = 1.5 # Number of stargates per nexus
-	hr_roboticsMultiplier = 1 # Number of robotics facilities per nexus
+	hr_gatewayConstant = 2 # Number of gateways for first nexus
+	hr_stargateConstant = 2 # Number of stargates for first nexus
+	hr_roboticsConstant = 1 # Number of robotics facilities for first nexus
+	hr_gatewayCoeffecient = 1 # Number of gateways per nexus
+	hr_stargateCoeffecient = 1 # Number of stargates per nexus
+	hr_roboticsCoeffecient = 0.5 # Number of robotics facilities per nexus
 	hr_expansionTime = 240 # Expansion time in seconds
 	hr_workersPerBase = 22 # Number of workers per nexus
 	hr_buildDistance = 6.0 # Average build distance around target
@@ -83,45 +86,52 @@ class Pylon_AI(sc2.BotAI):
 
 	# Local Vars
 	buildPlans = Queue()
-	armyUnits = {UnitTypeId.ZEALOT, UnitTypeId.SENTRY, UnitTypeId.STALKER, UnitTypeId.VOIDRAY, UnitTypeId.COLOSSUS, UnitTypeId.HIGHTEMPLAR, UnitTypeId.DARKTEMPLAR, UnitTypeId.PHOENIX, UnitTypeId.CARRIER, UnitTypeId.DISRUPTOR, UnitTypeId.WARPPRISM, UnitTypeId.OBSERVER, UnitTypeId.IMMORTAL, UnitTypeId.ARCHON, UnitTypeId.ADEPT,, UnitTypeId.ORACLE, UnitTypeId.TEMPEST}
+	armyUnits = {UnitTypeId.ZEALOT, UnitTypeId.SENTRY, UnitTypeId.STALKER, UnitTypeId.VOIDRAY, UnitTypeId.COLOSSUS, UnitTypeId.HIGHTEMPLAR, UnitTypeId.DARKTEMPLAR, UnitTypeId.PHOENIX, UnitTypeId.CARRIER, UnitTypeId.DISRUPTOR, UnitTypeId.WARPPRISM, UnitTypeId.OBSERVER, UnitTypeId.IMMORTAL, UnitTypeId.ARCHON, UnitTypeId.ADEPT, UnitTypeId.ORACLE, UnitTypeId.TEMPEST}
 	pendingUpgrades = []
 
+	# Bot AI class startup async
 	async def on_start_async(self):
 		await self.chat_send("(glhf)")
 
+	# Bot AI class step async
 	async def on_step(self, iteration):
-		if(self.time % 10 == 0):
+		if(self.time % 5 == 0):
 			await self.distribute_workers()
 		await self.assess_builds()
 		await self.attempt_build()
 		await self.activate_abilities()
 		if(self.time % 10 == 0) and self.supply_army > 0:
 			await self.amass()
-		if(self.time % 10 == 0) and self.supply_army > 0:
+		if(self.time % 5 == 0) and self.supply_army > 0:
 			await self.attack()
 
+	# Attempt to build by dequeuing from build plans if I can afford it
 	async def attempt_build(self):
 		if(len(self.buildPlans) > 0):
 			if(self.can_afford(self.buildPlans.peek())):
 				nextUnit = self.buildPlans.dequeue()
 				await self.build_unit(nextUnit)
 
+	# Get accurate unit count by including build plans and pending
 	def getUnitCount(self, unit):
 
 		return self.units(unit).amount + self.buildPlans.countOf(unit) + self.already_pending(unit)
 
+	# Returns false if an upgrade is not researched or pending, true otherwise
 	def getUpgradeStatus(self, upgrade):
 
 		if self.buildPlans.countOf(upgrade) == 0 and upgrade not in self.pendingUpgrades:
 			return False
 		return True
 
+	# Switch for priority of upgrade from upgrade priorities heuristic, include default case
 	def getUpgradePriority(self, upgrade):
 
 		if upgrade in self.hr_upgradePriorities:
 			return self.hr_upgradePriorities[upgrade]
 		return self.hr_upgradePriorities["DEFAULT"]
 
+	# Assess what we need to add to build plans this step
 	async def assess_builds(self):
 
 		# Assess workers using multiplier by num of bases
@@ -135,20 +145,20 @@ class Pylon_AI(sc2.BotAI):
 		# Assess gateways checking for complete pylon and using heuristic threshold based on num of bases
 		pylons = self.units(PYLON).ready
 		if pylons.exists:
-			if self.getUnitCount(GATEWAY) < (self.hr_gatewayMultiplier * self.units(NEXUS).amount):
+			if self.getUnitCount(GATEWAY) < self.get_gateway_multiplier():
 				self.buildPlans.enqueue(GATEWAY, self.hr_buildPriorities[GATEWAY])
 
 		# Assess stargates checking for complete pylon and using heuristic threshold based on num of bases
 		cyberneticscores = self.units(CYBERNETICSCORE).ready
 		if cyberneticscores.exists:
-			if self.getUnitCount(STARGATE) < (self.hr_stargateMultiplier * self.units(NEXUS).amount):
+			if self.getUnitCount(STARGATE) < self.get_stargate_multiplier():
 				if self.get_tech_time(STARGATE) < self.time:
 					self.buildPlans.enqueue(STARGATE, self.hr_buildPriorities[STARGATE])
 
 		# Assess robotics facilities checking for complete pylon and using heuristic threshold based on num of bases
 		cyberneticscores = self.units(CYBERNETICSCORE).ready
 		if cyberneticscores.exists:
-			if self.getUnitCount(ROBOTICSFACILITY) < (self.hr_roboticsMultiplier * self.units(NEXUS).amount):
+			if self.getUnitCount(ROBOTICSFACILITY) < self.get_robotics_multiplier():
 				if self.get_tech_time(ROBOTICSFACILITY) < self.time:
 					self.buildPlans.enqueue(ROBOTICSFACILITY, self.hr_buildPriorities[ROBOTICSFACILITY])
 
@@ -190,6 +200,7 @@ class Pylon_AI(sc2.BotAI):
 				self.buildPlans.enqueue(PYLON, 100)
 			await self.chat_send("If you see this it means I got confused. help.")
 
+	# Get heurisitic time after which we can research a certain upgrade
 	def get_tech_time(self,unit):
 
 		if self.getUnitCount(unit) >= len(self.hr_techTime[unit]):
@@ -199,6 +210,7 @@ class Pylon_AI(sc2.BotAI):
 		else:
 			return self.hr_techTime[unit][self.getUnitCount(unit)]
 
+	# Iterate army units and add to build plans trying to match unit ratio
 	def assess_army(self, unit, requirements):
 
 		meet_requirements = True
@@ -211,6 +223,7 @@ class Pylon_AI(sc2.BotAI):
 			if (self._game_data.units[unit.value]._proto.food_required * self.getUnitCount(unit)) / self.supply_cap < self.hr_unitRatio[unit] :
 					self.buildPlans.enqueue(unit, self.hr_buildPriorities[unit])
 
+	# Iterate tech structures and build if we don't have them and we're past their heuristic build time
 	def assess_techstructure(self, unit, requirements):
 
 		meet_requirements = True
@@ -223,6 +236,7 @@ class Pylon_AI(sc2.BotAI):
 			if self.getUnitCount(unit) < 1 and self.time > self.get_tech_time(unit):
 				self.buildPlans.enqueue(unit, self.hr_buildPriorities[unit])
 
+	# Iterate ugrades and add to plans if we're past their heuristic research time
 	def assess_upgrades(self):
 
 		for upgrade in self.hr_upgradeTime:
@@ -269,7 +283,7 @@ class Pylon_AI(sc2.BotAI):
 			await self.build(unit, near=self.units(PYLON).ready.random)
 		# Handle upgrades
 		if unit in self.hr_upgradeTime:
-			buildings = self.units(self.hr_upgradeTime[unit][0]).ready
+			buildings = self.units(self.hr_upgradeTime[unit][0]).ready.prefer_idle
 			if buildings:
 				await self.do(buildings.first(unit))
 
@@ -306,7 +320,7 @@ class Pylon_AI(sc2.BotAI):
 	async def amass(self):
 		if self.supply_army < self.hr_attackSupply:
 			for s in self.units.of_type(self.armyUnits):
-				if s.is_idle:
+				if not s.is_attacking:
 					await self.do(s.move(self.main_base_ramp.top_center))
 
 	# Method to make attack decisions
@@ -322,6 +336,7 @@ class Pylon_AI(sc2.BotAI):
 					for s in self.units.of_type(self.armyUnits):
 						await self.do(s.attack(nearest_enemy[1].position))
 
+	# Return object containing unit ID and distance of enemy closest to friendly nexus
 	def enemy_near_nexus(self):
 
 		dist = 9000
@@ -333,6 +348,7 @@ class Pylon_AI(sc2.BotAI):
 					unit = self.known_enemy_units.closest_to(nexus.position)
 		return [dist, unit]
 
+	# Handler for activating unit abilities in combat
 	async def activate_abilities(self):
 		
 		# Handle sentry abilities
@@ -340,6 +356,7 @@ class Pylon_AI(sc2.BotAI):
 			if sentry.is_attacking and sentry.energy >= 75:
 				await self.do(sentry(GUARDIANSHIELD_GUARDIANSHIELD))
 
+	# Generate pylon placement position
 	def generate_pylon_position(self):
 		#if self.units(PYLON).amount == 0 :-
 		#	return self.main_base_ramp.top_center.random_on_distance(self.hr_buildDistance)
@@ -355,3 +372,18 @@ class Pylon_AI(sc2.BotAI):
 			newX = nexusPosition.x - (closest.x - nexusPosition.x)
 			newY = nexusPosition.y - (closest.y - nexusPosition.y)
 			return Point2((newX, newY))
+
+	# Return expected number of gateways
+	def get_gateway_multiplier(self):
+
+		return self.hr_gatewayConstant + (self.hr_gatewayCoeffecient * (self.units(NEXUS).amount - 1))
+
+	# Return expected number of stargates
+	def get_stargate_multiplier(self):
+
+		return self.hr_stargateConstant + (self.hr_stargateCoeffecient * (self.units(NEXUS).amount - 1))
+
+	# Return expected number of robotic facilities
+	def get_robotics_multiplier(self):
+
+		return self.hr_roboticsConstant + (self.hr_roboticsCoeffecient * (self.units(NEXUS).amount - 1))
