@@ -1,4 +1,9 @@
 import sc2
+import random
+try:
+	import cPickle as pickle
+except ModuleNotFoundError:
+	import pickle
 
 from sc2.constants import *
 
@@ -79,19 +84,21 @@ class Chevron:
 		# Score identifier
 		self.score = 0
 
-	def copy_chevron(self, Pylon_AI):
+		# Random name to identify self
+		first = random.choice(["Antimony","Arsenic","Aluminum","Selenium","Lead","Oxygen","Nitrogen","Rhenium","Neodynium","Neptunium","Germanium","Iron","Silver","Gold","Tin","Americium","Uranium","Plutonium","Boron","Carbon","Hydrogen","Helium"])
+		last = random.choice(["Alpha","Beta","Gamma","Delta","Epsilon","Zeta","Eta","Theta","Iota","Kappa","Lambda","Mu","Nu","Omikron","Xi","Pi","Rho","Sigma","Tau","Upsilon","Phi","Psi","Chi","Omega"])
+		self.name = first + " " + last
 
-		self.hr_supplyTrigger = 5
-		self.hr_gatewayConstant = 2
-		self.hr_stargateConstant = 2
-		self.hr_roboticsConstant = 1
-		self.hr_gatewayCoeffecient = 1
-		self.hr_stargateCoeffecient = 1
-		self.hr_roboticsCoeffecient = 0.5
-		self.hr_expansionTime = 260
-		self.hr_workersPerBase = 22
-		self.hr_buildDistance = 6.0
-		self.hr_attackSupply = 30
-		self.hr_defendSupply = 10
-		self.hr_gasDetector = 10.0
-		self.hr_defendDistance = 25.0
+	def copy_pylon(self, pylon):
+
+		self.hr_static = pylon.hr_static
+		self.hr_buildPriorities = pylon.hr_buildPriorities
+		self.hr_upgradePriorities = pylon.hr_upgradePriorities
+		self.hr_unitRatio = pylon.hr_unitRatio
+		self.hr_upgradeTime = pylon.hr_upgradeTime
+		self.hr_techTime = pylon.hr_techTime
+		self.score = pylon.score
+
+	def commit():
+		with open('chevron_population.pkl', 'wb') as data:
+			pickle.dump(self, data, pickle.HIGHEST_PROTOCOL)

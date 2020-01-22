@@ -23,10 +23,12 @@ def find_parents():
 
 	parent1 = None
 	parent2 = None
-	parent1_score = 0
-	parent2_score = 0
+	parent1_score = -1
+	parent2_score = -1
 
 	for chevron in population_chevrons('chevron_population.pkl'):
+
+		print(chevron.name + " : " + str(chevron.score))
 
 		if chevron.score > parent2_score:
 			parent2_score = chevron.score
@@ -70,7 +72,9 @@ pylon = Pylon_AI()
 
 commit_default_chevron()
 
-#if(find_parents()):
+if(find_parents()):
+
+	print("Found parents")
 
 	#cross_breed(this_pylon, parent1, parent2)
 

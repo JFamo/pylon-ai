@@ -1,9 +1,5 @@
 import sc2
 import random
-try:
-	import cPickle as pickle
-except ModuleNotFoundError:
-	import pickle
 
 from queue import *
 from chevron import Chevron
@@ -408,5 +404,6 @@ class Pylon_AI(sc2.BotAI):
 
 		print(game_result)
 
-		#with open('pylon_population.pkl', 'wb') as data:
-			#pickle.dump(self, data, pickle.HIGHEST_PROTOCOL)
+		c = Chevron()
+		c.copy_pylon(self)
+		c.commit()
