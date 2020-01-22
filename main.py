@@ -20,81 +20,83 @@ from sc2.ids.upgrade_id import UpgradeId
 
 class Pylon_AI(sc2.BotAI):
 
-	# Heuristics
-	hr_supplyTrigger = 5 # Remaining supply to build pylon
-	hr_gatewayConstant = 2 # Number of gateways for first nexus
-	hr_stargateConstant = 2 # Number of stargates for first nexus
-	hr_roboticsConstant = 1 # Number of robotics facilities for first nexus
-	hr_gatewayCoeffecient = 1 # Number of gateways per nexus
-	hr_stargateCoeffecient = 1 # Number of stargates per nexus
-	hr_roboticsCoeffecient = 0.5 # Number of robotics facilities per nexus
-	hr_expansionTime = 260 # Expansion time in seconds
-	hr_workersPerBase = 22 # Number of workers per nexus
-	hr_buildDistance = 6.0 # Average build distance around target
-	hr_attackSupply = 50 # Supply to launch attack
-	hr_defendSupply = 10 # Supply to attempt defense
-	hr_gasDetector = 10.0 # Range to detect assimilators
-	hr_defendDistance = 25.0 # Distance to nexus to defend
+	def __init__(self):
 
-	# Priority values for all units and structures
-	hr_buildPriorities = {PROBE: 1, NEXUS: 10, PYLON: 4, GATEWAY: 3, STARGATE: 3, ZEALOT: 1, SENTRY: 1, STALKER: 1, ASSIMILATOR: 2, CYBERNETICSCORE: 5, FORGE: 5, VOIDRAY: 2, COLOSSUS: 2, FLEETBEACON: 4, TWILIGHTCOUNCIL: 5, PHOTONCANNON: 2, TEMPLARARCHIVE: 4, DARKSHRINE: 4, ROBOTICSBAY: 4, ROBOTICSFACILITY: 3, HIGHTEMPLAR: 2, DARKTEMPLAR: 2, PHOENIX: 2.5, CARRIER: 3, WARPPRISM: 2, OBSERVER: 4, IMMORTAL: 2, ADEPT: 1, ORACLE: 1, TEMPEST: 2, DISRUPTOR: 1} # This should be situational, generalize for now
-	# Priority values for all upgrades
-	hr_upgradePriorities = {"DEFAULT": 5}
+		# Heuristics
+		self.hr_supplyTrigger = 5 # Remaining supply to build pylon
+		self.hr_gatewayConstant = 2 # Number of gateways for first nexus
+		self.hr_stargateConstant = 2 # Number of stargates for first nexus
+		self.hr_roboticsConstant = 1 # Number of robotics facilities for first nexus
+		self.hr_gatewayCoeffecient = 1 # Number of gateways per nexus
+		self.hr_stargateCoeffecient = 1 # Number of stargates per nexus
+		self.hr_roboticsCoeffecient = 0.5 # Number of robotics facilities per nexus
+		self.hr_expansionTime = 260 # Expansion time in seconds
+		self.hr_workersPerBase = 22 # Number of workers per nexus
+		self.hr_buildDistance = 6.0 # Average build distance around target
+		self.hr_attackSupply = 50 # Supply to launch attack
+		self.hr_defendSupply = 10 # Supply to attempt defense
+		self.hr_gasDetector = 10.0 # Range to detect assimilators
+		self.hr_defendDistance = 25.0 # Distance to nexus to defend
 
-	# Supply ratio of units for build
-	hr_unitRatio = {}
-	hr_unitRatio[ZEALOT] = 0.15
-	hr_unitRatio[STALKER] = 0.30
-	hr_unitRatio[SENTRY] = 0.05
-	hr_unitRatio[VOIDRAY] = 0.15
-	hr_unitRatio[COLOSSUS] = 0.1
-	hr_unitRatio[HIGHTEMPLAR] = 0.1
-	hr_unitRatio[DARKTEMPLAR] = 0
-	hr_unitRatio[PHOENIX] = 0
-	hr_unitRatio[CARRIER] = 0
-	hr_unitRatio[WARPPRISM] = 0
-	hr_unitRatio[OBSERVER] = 0
-	hr_unitRatio[IMMORTAL] = 0.1
-	hr_unitRatio[ADEPT] = 0
-	hr_unitRatio[ORACLE] = 0
-	hr_unitRatio[TEMPEST] = 0
+		# Priority values for all units and structures
+		self.hr_buildPriorities = {PROBE: 1, NEXUS: 10, PYLON: 4, GATEWAY: 3, STARGATE: 3, ZEALOT: 1, SENTRY: 1, STALKER: 1, ASSIMILATOR: 2, CYBERNETICSCORE: 5, FORGE: 5, VOIDRAY: 2, COLOSSUS: 2, FLEETBEACON: 4, TWILIGHTCOUNCIL: 5, PHOTONCANNON: 2, TEMPLARARCHIVE: 4, DARKSHRINE: 4, ROBOTICSBAY: 4, ROBOTICSFACILITY: 3, HIGHTEMPLAR: 2, DARKTEMPLAR: 2, PHOENIX: 2.5, CARRIER: 3, WARPPRISM: 2, OBSERVER: 4, IMMORTAL: 2, ADEPT: 1, ORACLE: 1, TEMPEST: 2, DISRUPTOR: 1} # This should be situational, generalize for now
+		# Priority values for all upgrades
+		self.hr_upgradePriorities = {"DEFAULT": 5}
 
-	# Expected timing of upgrades
-	hr_upgradeTime = {}
-	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDWEAPONSLEVEL1] = [FORGE,240]
-	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDARMORLEVEL1] = [FORGE,340]
-	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDWEAPONSLEVEL2] = [FORGE,600]
-	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDARMORLEVEL2] = [FORGE,700]
-	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDWEAPONSLEVEL3] = [FORGE,800]
-	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDARMORLEVEL3] = [FORGE,900]
-	hr_upgradeTime[FORGERESEARCH_PROTOSSSHIELDSLEVEL1] = [FORGE,440]
-	hr_upgradeTime[FORGERESEARCH_PROTOSSSHIELDSLEVEL2] = [FORGE,650]
-	hr_upgradeTime[FORGERESEARCH_PROTOSSSHIELDSLEVEL3] = [FORGE,750]
-	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRWEAPONSLEVEL1] = [CYBERNETICSCORE,440]
-	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRWEAPONSLEVEL2] = [CYBERNETICSCORE,1000]
-	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRWEAPONSLEVEL3] = [CYBERNETICSCORE,1200]
-	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRARMORLEVEL1] = [CYBERNETICSCORE,540]
-	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRARMORLEVEL2] = [CYBERNETICSCORE,1100]
-	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRARMORLEVEL3] = [CYBERNETICSCORE,1300]
+		# Supply ratio of units for build
+		self.hr_unitRatio = {}
+		self.hr_unitRatio[ZEALOT] = 0.15
+		self.hr_unitRatio[STALKER] = 0.30
+		self.hr_unitRatio[SENTRY] = 0.05
+		self.hr_unitRatio[VOIDRAY] = 0.15
+		self.hr_unitRatio[COLOSSUS] = 0.1
+		self.hr_unitRatio[HIGHTEMPLAR] = 0.1
+		self.hr_unitRatio[DARKTEMPLAR] = 0
+		self.hr_unitRatio[PHOENIX] = 0
+		self.hr_unitRatio[CARRIER] = 0
+		self.hr_unitRatio[WARPPRISM] = 0
+		self.hr_unitRatio[OBSERVER] = 0
+		self.hr_unitRatio[IMMORTAL] = 0.1
+		self.hr_unitRatio[ADEPT] = 0
+		self.hr_unitRatio[ORACLE] = 0
+		self.hr_unitRatio[TEMPEST] = 0
 
-	# Expected timing of high tech
-	hr_techTime = {}
-	hr_techTime[FORGE] = [0]
-	hr_techTime[CYBERNETICSCORE] = [0]
-	hr_techTime[STARGATE] = [300,450,600,750]
-	hr_techTime[ROBOTICSFACILITY] = [400,550,800,1000]
-	hr_techTime[TWILIGHTCOUNCIL] = [500]
-	hr_techTime[FLEETBEACON] = [900]
-	hr_techTime[ROBOTICSBAY] = [800]
-	hr_techTime[TEMPLARARCHIVE] = [1100]
-	hr_techTime[DARKSHRINE] = [1200]
+		# Expected timing of upgrades
+		self.hr_upgradeTime = {}
+		self.hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDWEAPONSLEVEL1] = [FORGE,240]
+		self.hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDARMORLEVEL1] = [FORGE,340]
+		self.hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDWEAPONSLEVEL2] = [FORGE,600]
+		self.hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDARMORLEVEL2] = [FORGE,700]
+		self.hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDWEAPONSLEVEL3] = [FORGE,800]
+		self.hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDARMORLEVEL3] = [FORGE,900]
+		self.hr_upgradeTime[FORGERESEARCH_PROTOSSSHIELDSLEVEL1] = [FORGE,440]
+		self.hr_upgradeTime[FORGERESEARCH_PROTOSSSHIELDSLEVEL2] = [FORGE,650]
+		self.hr_upgradeTime[FORGERESEARCH_PROTOSSSHIELDSLEVEL3] = [FORGE,750]
+		self.hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRWEAPONSLEVEL1] = [CYBERNETICSCORE,440]
+		self.hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRWEAPONSLEVEL2] = [CYBERNETICSCORE,1000]
+		self.hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRWEAPONSLEVEL3] = [CYBERNETICSCORE,1200]
+		self.hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRARMORLEVEL1] = [CYBERNETICSCORE,540]
+		self.hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRARMORLEVEL2] = [CYBERNETICSCORE,1100]
+		self.hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRARMORLEVEL3] = [CYBERNETICSCORE,1300]
 
-	# Local Vars
-	buildPlans = Queue()
-	armyUnits = {UnitTypeId.ZEALOT, UnitTypeId.SENTRY, UnitTypeId.STALKER, UnitTypeId.VOIDRAY, UnitTypeId.COLOSSUS, UnitTypeId.HIGHTEMPLAR, UnitTypeId.DARKTEMPLAR, UnitTypeId.PHOENIX, UnitTypeId.CARRIER, UnitTypeId.DISRUPTOR, UnitTypeId.WARPPRISM, UnitTypeId.OBSERVER, UnitTypeId.IMMORTAL, UnitTypeId.ARCHON, UnitTypeId.ADEPT, UnitTypeId.ORACLE, UnitTypeId.TEMPEST}
-	pendingUpgrades = []
-	score = 0
+		# Expected timing of high tech
+		self.hr_techTime = {}
+		self.hr_techTime[FORGE] = [0]
+		self.hr_techTime[CYBERNETICSCORE] = [0]
+		self.hr_techTime[STARGATE] = [300,450,600,750]
+		self.hr_techTime[ROBOTICSFACILITY] = [400,550,800,1000]
+		self.hr_techTime[TWILIGHTCOUNCIL] = [500]
+		self.hr_techTime[FLEETBEACON] = [900]
+		self.hr_techTime[ROBOTICSBAY] = [800]
+		self.hr_techTime[TEMPLARARCHIVE] = [1100]
+		self.hr_techTime[DARKSHRINE] = [1200]
 
+		# Local Vars
+		self.buildPlans = Queue()
+		self.armyUnits = {UnitTypeId.ZEALOT, UnitTypeId.SENTRY, UnitTypeId.STALKER, UnitTypeId.VOIDRAY, UnitTypeId.COLOSSUS, UnitTypeId.HIGHTEMPLAR, UnitTypeId.DARKTEMPLAR, UnitTypeId.PHOENIX, UnitTypeId.CARRIER, UnitTypeId.DISRUPTOR, UnitTypeId.WARPPRISM, UnitTypeId.OBSERVER, UnitTypeId.IMMORTAL, UnitTypeId.ARCHON, UnitTypeId.ADEPT, UnitTypeId.ORACLE, UnitTypeId.TEMPEST}
+		self.pendingUpgrades = []
+		self.score = 0
+	
 	# Bot AI class startup async
 	async def on_start_async(self):
 		await self.chat_send("(glhf)")
