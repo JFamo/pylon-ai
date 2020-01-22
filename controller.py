@@ -20,6 +20,13 @@ def population_chevrons(file):
 			except EOFError:
 				break
 
+def set_pylon_heritage(n1, n2, s1, s2):
+
+	pylon.parent1_name = n1
+	pylon.parent2_name = n2
+	pylon.parent1_score = s1
+	pylon.parent2_score = s2
+
 def find_parents():
 
 	parent1 = None
@@ -54,6 +61,8 @@ def cross_breed(pylon, parent1, parent2):
 	pylon.hr_unitRatio = breed_dictionary(parent1.hr_unitRatio, parent2.hr_unitRatio)
 	pylon.hr_upgradeTime = breed_dictionary(parent1.hr_upgradeTime, parent2.hr_upgradeTime)
 	pylon.hr_techTime = breed_dictionary(parent1.hr_techTime, parent2.hr_techTime)
+
+	set_pylon_heritage(parent1.name, parent2.name, parent1.score, parent2.score)
 
 def breed_dictionary(p1, p2):
 
@@ -127,6 +136,7 @@ else:
 
 	default = commit_default_chevron()
 	default.copy_chevron(pylon)
+	set_pylon_heritage(default.name, "nonexistent", default.score, 0)
 
 run_game(maps.get(random_map()), [
 		Bot(Race.Protoss, pylon),

@@ -33,6 +33,12 @@ class Pylon_AI(sc2.BotAI):
 		# Expected timing of high tech
 		self.hr_techTime = {}
 
+		# Algorithm tracking
+		self.parent1_name = "ERROR"
+		self.parent2_name = "ERROR"
+		self.parent1_score = -99999
+		self.parent2_score = -99999
+
 		# Local Vars
 		self.buildPlans = Queue()
 		self.armyUnits = {UnitTypeId.ZEALOT, UnitTypeId.SENTRY, UnitTypeId.STALKER, UnitTypeId.VOIDRAY, UnitTypeId.COLOSSUS, UnitTypeId.HIGHTEMPLAR, UnitTypeId.DARKTEMPLAR, UnitTypeId.PHOENIX, UnitTypeId.CARRIER, UnitTypeId.DISRUPTOR, UnitTypeId.WARPPRISM, UnitTypeId.OBSERVER, UnitTypeId.IMMORTAL, UnitTypeId.ARCHON, UnitTypeId.ADEPT, UnitTypeId.ORACLE, UnitTypeId.TEMPEST}
@@ -41,6 +47,7 @@ class Pylon_AI(sc2.BotAI):
 
 	# Bot AI class startup async
 	async def on_start_async(self):
+		await self.chat_send("My name is Pylon! My parents were " + self.parent1_name + " with a score of " + self.parent1_score + " and " + self.parent2_name + " with a score of " + self.parent2_score + ".")
 		await self.chat_send("(glhf)")
 
 	# Bot AI class step async
