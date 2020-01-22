@@ -38,17 +38,17 @@ class Pylon_AI(sc2.BotAI):
 
 	# Expected timing of upgrades
 	hr_upgradeTime = {}
-	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDWEAPONSLEVEL1] = [FORGE,200]
-	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDARMORLEVEL1] = [FORGE,240]
+	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDWEAPONSLEVEL1] = [FORGE,240]
+	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDARMORLEVEL1] = [FORGE,300]
 	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDWEAPONSLEVEL2] = [FORGE,400]
 	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDARMORLEVEL2] = [FORGE,440]
 	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDWEAPONSLEVEL3] = [FORGE,600]
 	hr_upgradeTime[FORGERESEARCH_PROTOSSGROUNDARMORLEVEL3] = [FORGE,640]
-	hr_upgradeTime[FORGERESEARCH_PROTOSSSHIELDSLEVEL1] = [FORGE,300]
+	hr_upgradeTime[FORGERESEARCH_PROTOSSSHIELDSLEVEL1] = [FORGE,350]
 	hr_upgradeTime[FORGERESEARCH_PROTOSSSHIELDSLEVEL2] = [FORGE,500]
 	hr_upgradeTime[FORGERESEARCH_PROTOSSSHIELDSLEVEL3] = [FORGE,700]
-	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRWEAPONSLEVEL1] = [CYBERNETICSCORE,350]
-	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRWEAPONSLEVEL2] = [CYBERNETICSCORE,550]
+	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRWEAPONSLEVEL1] = [CYBERNETICSCORE,550]
+	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRWEAPONSLEVEL2] = [CYBERNETICSCORE,650]
 	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRWEAPONSLEVEL3] = [CYBERNETICSCORE,750]
 	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRARMORLEVEL1] = [CYBERNETICSCORE,440]
 	hr_upgradeTime[CYBERNETICSCORERESEARCH_PROTOSSAIRARMORLEVEL2] = [CYBERNETICSCORE,540]
@@ -193,9 +193,9 @@ class Pylon_AI(sc2.BotAI):
 			await self.build(FORGE, near=self.units(PYLON).ready.random)
 		# Handle upgrades
 		if unit in self.hr_upgradeTime:
-			buildings = self.units(self.hr_upgradeTime[unit][0]).ready.idle
+			buildings = self.units(self.hr_upgradeTime[unit][0]).ready
 			if buildings:
-				await self.do(buildings.first.research(unit))
+				await self.do(buildings.first(unit))
 
 	# Method to place and build pylons or nexus if required
 	async def build_pylons(self):
@@ -245,7 +245,7 @@ class Pylon_AI(sc2.BotAI):
 				await self.do(sentry(GUARDIANSHIELD_GUARDIANSHIELD))
 
 	def generate_pylon_position(self):
-		#if self.units(PYLON).amount == 0 :
+		#if self.units(PYLON).amount == 0 :-
 		#	return self.main_base_ramp.top_center.random_on_distance(self.hr_buildDistance)
 		#else :
 			nexusPosition = self.units(NEXUS).random.position.to2.random_on_distance(self.hr_buildDistance)
