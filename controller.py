@@ -9,6 +9,7 @@ from sc2 import run_game, maps, Race, Difficulty
 from sc2.player import Bot, Computer
 from main import Pylon_AI
 from chevron import Chevron
+from sc2.ids.unit_typeid import UnitTypeId
 
 def population_chevrons(file):
 
@@ -60,23 +61,41 @@ def breed_dictionary(p1, p2):
 
 	for x in p1:
 
-		if isinstance(p1[x], (int, float)):
-
-			new[x] = avg(p1[x],p2[x])
-
-		elif isinstance(p1[x], (list, dict, tuple)):
-
-			new[x] = breed_dictionary(p1[x],p2[x])
-
-		else:
-
-			if p1[x] != p2[x]:
-
-				print("Heuristic " + str(x) + " was inconsistent for parents!")
-
-			new[x] = p1[x]
+		new[x] = breed_heuristic(p1[x], p2[x])
 
 	return new
+
+def breed_list(p1, p2):
+
+	new = []
+
+	for x in range(len(p1)):
+
+		new.append(breed_heuristic(p1[x], p2[x]))
+
+	return new
+
+def breed_heuristic(h1, h2):
+
+	if isinstance(h1, (int, float)):
+
+		return avg(h1,h2)
+
+	elif isinstance(h1, (dict)):
+
+		return breed_dictionary(h1,h2)
+
+	elif isinstance(h1, (list)):
+
+		return breed_list(h1, h2)
+
+	else:
+
+		if h1 != h2:
+
+			print("Heuristic " + str(h1) + " was inconsistent for parents!")
+
+		return h1
 
 def avg(n1, n2):
 
@@ -98,10 +117,11 @@ def commit_default_chevron():
 	return default
 
 pylon = Pylon_AI()
+parents = find_parents()
 
-if(find_parents()):
+if(parents):
 
-	cross_breed(pylon, parent1, parent2)
+	cross_breed(pylon, parents[0], parents[1])
 
 else:
 
