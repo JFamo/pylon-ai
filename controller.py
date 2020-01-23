@@ -108,7 +108,7 @@ def breed_heuristic(h1, h2, mutation_type):
 
 	if isinstance(h1, (int, float)):
 
-		return mutate(avg(h1,h2), mutation_type)
+		return mutate(avg(h1,h2), diff(h1,h2), mutation_type)
 
 	elif isinstance(h1, (dict)):
 
@@ -129,6 +129,10 @@ def breed_heuristic(h1, h2, mutation_type):
 def avg(n1, n2):
 
 	return (n1 + n2) / 2
+
+def diff(n1, n2):
+
+	return abs(n1 - n2)
 
 def random_map():
 
@@ -170,23 +174,25 @@ def run_genetics():
 
 	return pylon
 
-def mutate(num, type):
+def mutate(num, dif, type):
+
+	n = dif / avg * 3 / 2
 
 	if type=="ratio":
 
-		return num + ((random.random() - 0.5) / 10.0)
+		return num + (n*((random.random() - 0.5) / 10.0))
 
 	elif type=="priority":
 
-		return num + (random.random() - 0.5)
+		return int(num + (n*((random.random() - 0.5) * 4)))
 
 	elif type=="time":
 
-		return num + ((random.random() - 0.5) * num / 10)
+		return num + (n*((random.random() - 0.5) * num / 10))
 
 	else:
 
-		return num + ((random.random() - 0.5) * num)
+		return num + (n*((random.random() - 0.5) * num))
 
 while True:
 

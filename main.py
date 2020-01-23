@@ -188,7 +188,7 @@ class Pylon_AI(sc2.BotAI):
 		self.assess_army(IMMORTAL, [ROBOTICSFACILITY])
 		self.assess_army(WARPPRISM, [ROBOTICSFACILITY])
 		self.assess_army(COLOSSUS, [ROBOTICSFACILITY, ROBOTICSBAY])
-		self.assess_army(DISRUPTOR, [ROBOTICSFACILITY, ROBOTICSBAY])
+		#self.assess_army(DISRUPTOR, [ROBOTICSFACILITY, ROBOTICSBAY])
 		self.assess_army(HIGHTEMPLAR, [GATEWAY, TWILIGHTCOUNCIL, TEMPLARARCHIVE])
 		self.assess_army(DARKTEMPLAR, [GATEWAY, TWILIGHTCOUNCIL, DARKSHRINE])
 
@@ -318,14 +318,16 @@ class Pylon_AI(sc2.BotAI):
 	async def attack(self):
 		if self.supply_army > self.hr_static['attackSupply']:
 			for s in self.units.of_type(self.armyUnits):
-				await self.do(s.attack(self.find_target(self.state)))
+				if not s.is_attacking:
+					await self.do(s.attack(self.find_target(self.state)))
 
 		elif self.supply_army > self.hr_static['defendSupply']:
 			if len(self.known_enemy_units) > 0:
 				nearest_enemy = self.enemy_near_nexus()
 				if nearest_enemy[0] < self.hr_static['defendDistance']:
 					for s in self.units.of_type(self.armyUnits):
-						await self.do(s.attack(nearest_enemy[1].position))
+						if not s.is_attacking:
+							await self.do(s.attack(nearest_enemy[1].position))
 
 	# Return object containing unit ID and distance of enemy closest to friendly nexus
 	def enemy_near_nexus(self):
@@ -357,6 +359,8 @@ class Pylon_AI(sc2.BotAI):
 				if not haveScout:
 
 					scoutProbe = self.units(PROBE).prefer_idle.first
+
+					await self.do(scoutProbe.attack(self.enemy_start_locations[0], True))
 
 					for base in self.expansion_locations:
 
