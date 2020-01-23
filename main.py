@@ -199,14 +199,15 @@ class Pylon_AI(sc2.BotAI):
 
 			if self.supply_left > 20 and self.units(GATEWAY).ready.idle.amount > 0:
 
-				self.buildPlans.enqueue(ZEALOT, 90)
+				await self.build_unit(ZEALOT)
 
 			else:
 
-				self.buildPlans.enqueue(PYLON, 100)
+				await self.build_unit(PYLON)
 
 			for nexus in self.units(NEXUS).ready.idle:
-				self.buildPlans.enqueue(PROBE, 90)
+				
+				await self.build_unit(PROBE)
 
 		# Escape case for confusion
 		if self.minerals > 1000 and self.vespene > 1000:

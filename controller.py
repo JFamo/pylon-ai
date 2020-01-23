@@ -171,7 +171,8 @@ def run_genetics():
 		set_pylon_heritage(pylon, default.name, "nonexistent", default.score, 0)
 
 	culling_threshold = 5000
-	cull_population(culling_threshold)
+	if len(population_chevrons()) > 30:
+		cull_population(culling_threshold)
 
 	pylon.print_heuristics()
 
