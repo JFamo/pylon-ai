@@ -76,7 +76,9 @@ def cull_population(culling_threshold):
 def cross_breed(pylon, parent1, parent2):
 
 	pylon.hr_static = breed_dictionary(parent1.hr_static, parent2.hr_static, "normal")
-	pylon.hr_buildPriorities = breed_dictionary(parent1.hr_buildPriorities, parent2.hr_buildPriorities, "priority")
+	#pylon.hr_buildPriorities = breed_dictionary(parent1.hr_buildPriorities, parent2.hr_buildPriorities, "priority")
+	# Hard set this for now, it's holding him back alot and needs to be situational
+	pylon.hr_buildPriorities = {PROBE: 1, NEXUS: 10, PYLON: 4, GATEWAY: 3, STARGATE: 3, ZEALOT: 1, SENTRY: 1, STALKER: 1, ASSIMILATOR: 2, CYBERNETICSCORE: 5, FORGE: 5, VOIDRAY: 2, COLOSSUS: 2, FLEETBEACON: 5, TWILIGHTCOUNCIL: 5, PHOTONCANNON: 2, TEMPLARARCHIVE: 5, DARKSHRINE: 5, ROBOTICSBAY: 5, ROBOTICSFACILITY: 3, HIGHTEMPLAR: 2, DARKTEMPLAR: 2, PHOENIX: 2, CARRIER: 2, WARPPRISM: 2, OBSERVER: 2, IMMORTAL: 2, ADEPT: 1, ORACLE: 1, TEMPEST: 2, DISRUPTOR: 1} # This should be situational, generalize for now
 	pylon.hr_upgradePriorities = breed_dictionary(parent1.hr_upgradePriorities, parent2.hr_upgradePriorities, "priority")
 	pylon.hr_unitRatio = breed_dictionary(parent1.hr_unitRatio, parent2.hr_unitRatio, "ratio")
 	pylon.hr_upgradeTime = breed_dictionary(parent1.hr_upgradeTime, parent2.hr_upgradeTime, "time")
@@ -167,7 +169,7 @@ def run_genetics():
 		default.copy_chevron(pylon)
 		set_pylon_heritage(pylon, default.name, "nonexistent", default.score, 0)
 
-	culling_threshold = 1500
+	culling_threshold = 5000
 	cull_population(culling_threshold)
 
 	pylon.print_heuristics()
