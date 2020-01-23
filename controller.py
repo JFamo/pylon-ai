@@ -1,5 +1,6 @@
 import sc2
 import random
+import os.path
 try:
     import cPickle as pickle
 except ModuleNotFoundError:
@@ -10,6 +11,7 @@ from sc2.player import Bot, Computer
 from main import Pylon_AI
 from chevron import Chevron
 from sc2.ids.unit_typeid import UnitTypeId
+from os import path
 
 def population_chevrons(file):
 
@@ -144,6 +146,9 @@ def commit_default_chevron():
 	return default
 
 def run_genetics():
+
+	if not path.exists('chevron_population.pkl'):
+		commit_default_chevron()
 
 	pylon = Pylon_AI()
 	parents = find_parents()
