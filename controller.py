@@ -77,8 +77,8 @@ def cross_breed(pylon, parent1, parent2):
 	pylon.hr_buildPriorities = breed_dictionary(parent1.hr_buildPriorities, parent2.hr_buildPriorities, "priority")
 	pylon.hr_upgradePriorities = breed_dictionary(parent1.hr_upgradePriorities, parent2.hr_upgradePriorities, "priority")
 	pylon.hr_unitRatio = breed_dictionary(parent1.hr_unitRatio, parent2.hr_unitRatio, "ratio")
-	pylon.hr_upgradeTime = breed_dictionary(parent1.hr_upgradeTime, parent2.hr_upgradeTime, "normal")
-	pylon.hr_techTime = breed_dictionary(parent1.hr_techTime, parent2.hr_techTime, "normal")
+	pylon.hr_upgradeTime = breed_dictionary(parent1.hr_upgradeTime, parent2.hr_upgradeTime, "time")
+	pylon.hr_techTime = breed_dictionary(parent1.hr_techTime, parent2.hr_techTime, "time")
 
 	set_pylon_heritage(pylon, parent1.name, parent2.name, parent1.score, parent2.score)
 
@@ -145,9 +145,6 @@ def commit_default_chevron():
 
 def run_genetics():
 
-	commit_default_chevron() # Note - comment this out on most runs, it will clear and reset population
-	culling_threshold = 1500
-	cull_population(culling_threshold)
 	pylon = Pylon_AI()
 	parents = find_parents()
 
@@ -160,6 +157,9 @@ def run_genetics():
 		default = commit_default_chevron()
 		default.copy_chevron(pylon)
 		set_pylon_heritage(pylon, default.name, "nonexistent", default.score, 0)
+
+	culling_threshold = 1500
+	cull_population(culling_threshold)
 
 	pylon.print_heuristics()
 
@@ -174,6 +174,10 @@ def mutate(num, type):
 	elif type=="priority":
 
 		return num + (random.random() - 0.5)
+
+	elif type=="time":
+
+		return num + ((random.random() - 0.5) * num / 10)
 
 	else:
 

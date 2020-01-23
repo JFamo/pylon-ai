@@ -92,6 +92,8 @@ class Pylon_AI(sc2.BotAI):
 			await self.amass()
 		if(int(self.time) % 3 == 0) and self.supply_army > 0:
 			await self.attack()
+		if(int(self.time) % 60 == 0) and self.known_enemy_structures.amount == 0:
+			await self.scout()
 
 	# Attempt to build by dequeuing from build plans if I can afford it
 	async def attempt_build(self):
@@ -336,6 +338,19 @@ class Pylon_AI(sc2.BotAI):
 					dist = self.known_enemy_units.closest_distance_to(nexus.position)
 					unit = self.known_enemy_units.closest_to(nexus.position)
 		return [dist, unit]
+
+	# Method to scout expansion locations if we don't see an enemy
+	async def scout(self):
+
+		if self.known_enemy_structures.amount == 0:
+
+			if self.units(PROBE).amount != 0:
+
+				scoutProbe = self.units(PROBE).prefer_idle.first
+
+				for base in self.expansion_locations:
+
+					await self.do(scoutProbe.attack(base, True))
 
 	# Handler for activating unit abilities in combat
 	async def activate_abilities(self):
