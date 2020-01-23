@@ -3,7 +3,7 @@ import random
 
 from queue import *
 from chevron import Chevron
-from sc2 import run_game, maps, Race, Difficulty
+from sc2 import run_game, maps, Race, Difficulty, Result
 from sc2.position import Point2
 from sc2.player import Bot, Computer
 from sc2.constants import *
@@ -196,12 +196,17 @@ class Pylon_AI(sc2.BotAI):
 
 		# Escape case for misplaced pylons
 		if self.minerals > 750:
+
 			if self.supply_left > 20 and self.units(GATEWAY).ready.idle.amount > 0:
+
 				self.buildPlans.enqueue(ZEALOT, 90)
-				self.buildPlans.enqueue(PROBE, 90)
+
 			else:
+
 				self.buildPlans.enqueue(PYLON, 100)
-			await self.chat_send("If you see this it means I got confused. help.")
+
+			for nexus in self.units(NEXUS).ready.idle:
+				self.buildPlans.enqueue(PROBE, 90)
 
 	# Get heurisitic time after which we can research a certain upgrade
 	def get_tech_time(self,unit):
@@ -376,20 +381,8 @@ class Pylon_AI(sc2.BotAI):
 
 	# Generate pylon placement position
 	def generate_pylon_position(self):
-		#if self.units(PYLON).amount == 0 :-
-		#	return self.main_base_ramp.top_center.random_on_distance(self.hr_static['buildDistance'])
-		#else :
-			nexusPosition = self.units(NEXUS).random.position.to2.random_on_distance(self.hr_static['buildDistance'])
-			closest = None
-			closest_dist = 9000
-			for mineral in self.state.mineral_field:
-				dist = nexusPosition.distance_to(mineral.position.to2)
-				if closest == None or dist < closest_dist:
-					closest_dist = dist
-					closest = mineral.position.to2
-			newX = nexusPosition.x - (closest.x - nexusPosition.x)
-			newY = nexusPosition.y - (closest.y - nexusPosition.y)
-			return Point2((newX, newY))
+
+		return self.units(NEXUS).random.position.to2.random_on_distance(self.hr_static['buildDistance'])
 
 	# Return expected number of gateways
 	def get_gateway_multiplier(self):
@@ -413,6 +406,7 @@ class Pylon_AI(sc2.BotAI):
 		self.armyUnits = None
 		self.pendingUpgrades = None
 
-		c = Chevron()
-		c.copy_pylon(self)
-		c.commit()
+		if game_result == Result.Victory:
+			c = Chevron()
+			c.copy_pylon(self)
+			c.commit()

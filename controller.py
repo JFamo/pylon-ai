@@ -132,7 +132,7 @@ def avg(n1, n2):
 
 def diff(n1, n2):
 
-	return abs(n1 - n2)
+	return 0 + abs(n1 - n2)
 
 def random_map():
 
@@ -176,7 +176,10 @@ def run_genetics():
 
 def mutate(num, dif, type):
 
-	n = dif / avg * 3 / 2
+	if not num == 0:
+		n = dif / num * 3 / 2
+	else:
+		n = 0.00001
 
 	if type=="ratio":
 
