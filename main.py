@@ -264,7 +264,7 @@ class Pylon_AI(sc2.BotAI):
 
 	# Generic method to handle dequeuing unit from build plans
 	async def build_unit(self, unit):
-		if(unit == PROBE):
+		if(unit == PROBE) and self.units(PROBE).amount < 75:
 			nexuses = self.units(NEXUS).ready.idle
 			if nexuses:
 				await self.do(nexuses.first.train(PROBE))
@@ -371,7 +371,7 @@ class Pylon_AI(sc2.BotAI):
 
 				if not haveScout:
 
-					scoutProbe = self.units(PROBE).prefer_idle.first
+					scoutProbe = self.units(PROBE).first
 
 					await self.do(scoutProbe.attack(self.enemy_start_locations[0], True))
 
