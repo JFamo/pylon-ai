@@ -208,6 +208,13 @@ class Pylon_AI(sc2.BotAI):
 			for nexus in self.units(NEXUS).ready.idle:
 				self.buildPlans.enqueue(PROBE, 90)
 
+		# Escape case for confusion
+		if self.minerals > 1000 and self.vespene > 1000:
+
+			await self.chat_send("If you see this message I got confused. help.")
+			print(self.buildPlans)
+
+
 	# Get heurisitic time after which we can research a certain upgrade
 	def get_tech_time(self,unit):
 
@@ -406,7 +413,6 @@ class Pylon_AI(sc2.BotAI):
 		self.armyUnits = None
 		self.pendingUpgrades = None
 
-		if game_result == Result.Victory:
-			c = Chevron()
-			c.copy_pylon(self)
-			c.commit()
+		c = Chevron()
+		c.copy_pylon(self)
+		c.commit()

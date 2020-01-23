@@ -8,6 +8,7 @@ except ModuleNotFoundError:
 
 from sc2 import run_game, maps, Race, Difficulty
 from sc2.player import Bot, Computer
+from sc2.constants import *
 from main import Pylon_AI
 from chevron import Chevron
 from sc2.ids.unit_typeid import UnitTypeId
@@ -138,7 +139,7 @@ def diff(n1, n2):
 
 def random_map():
 
-	return random.choice(["TritonLE","AcropolisLE","EphemeronLE","ThunderbirdLE","WintersGateLE","WorldofSleepersLE"])
+	return random.choice(["TritonLE","AcropolisLE","EphemeronLE","WintersGateLE","WorldofSleepersLE"])
 
 def random_race():
 
@@ -183,9 +184,13 @@ def mutate(num, dif, type):
 	else:
 		n = 0.00001
 
+	# Try to increase spontaneous mutability
+	if random.random() < 0.15:
+		n = 1.5
+
 	if type=="ratio":
 
-		return num + (n*((random.random() - 0.5) / 10.0))
+		return num + (n*((random.random() - 0.5) / 5.0))
 
 	elif type=="priority":
 
