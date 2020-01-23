@@ -41,15 +41,17 @@ def find_parents():
 
 		print(chevron.name + " : " + str(chevron.score))
 
-		if chevron.score > parent2_score:
-			parent2_score = chevron.score
-			parent2 = chevron
+		if random.random() > 0.15:
 
-		if chevron.score > parent1_score:
-			parent2 = parent1
-			parent2_score = parent1_score
-			parent1 = chevron
-			parent1_score = chevron.score
+			if chevron.score > parent2_score:
+				parent2_score = chevron.score
+				parent2 = chevron
+
+			if chevron.score > parent1_score:
+				parent2 = parent1
+				parent2_score = parent1_score
+				parent1 = chevron
+				parent1_score = chevron.score
 
 	if parent1 == None or parent2 == None:
 		return None
@@ -171,8 +173,7 @@ def run_genetics():
 		set_pylon_heritage(pylon, default.name, "nonexistent", default.score, 0)
 
 	culling_threshold = 5000
-	if len(population_chevrons()) > 30:
-		cull_population(culling_threshold)
+	cull_population(culling_threshold)
 
 	pylon.print_heuristics()
 
