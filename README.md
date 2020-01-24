@@ -14,6 +14,8 @@ Install StarCraft II at [https://starcraft2.com/en-us/](https://starcraft2.com/e
 
 Install python from [https://www.python.org/downloads/](https://www.python.org/downloads/). Pylon is tested and developed with 3.7.0. run 
 
+Add pip and python to the PATH environment variable
+
 In command line, run `pip install sc2`
 
 Download the most recent version of this repository from the master branch
