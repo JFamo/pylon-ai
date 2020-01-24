@@ -32,7 +32,7 @@ def set_pylon_heritage(pylon, n1, n2, s1, s2):
 
 def find_parents():
 
-	parents = []
+	parents = [None, None]
 	chevrons = []
 
 	for chevron in population_chevrons('chevron_population.pkl'):
@@ -44,7 +44,9 @@ def find_parents():
 	if len(chevrons) < 2:
 		return None
 	else:
-		return random.choices(chevrons, weights=scores, k=2)
+		while(parents[0] == parents[1]):
+			parents = random.choices(chevrons, weights=scores, k=2)
+		return parents
 
 def cull_population(culling_threshold):
 

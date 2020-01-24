@@ -201,7 +201,7 @@ class Pylon_AI(sc2.BotAI):
 
 				await self.build_unit(ZEALOT)
 
-			else:
+			elif self.supply_cap < 200:
 
 				await self.build_unit(PYLON)
 

@@ -29,7 +29,7 @@ class Chevron:
 		self.hr_static['defendDistance'] = 25.0 # Distance to nexus to defend
 
 		# Priority values for all units and structures
-		self.hr_buildPriorities = {PROBE: 1, NEXUS: 10, PYLON: 4, GATEWAY: 3, STARGATE: 3, ZEALOT: 1, SENTRY: 1, STALKER: 1, ASSIMILATOR: 2, CYBERNETICSCORE: 5, FORGE: 5, VOIDRAY: 2, COLOSSUS: 2, FLEETBEACON: 4, TWILIGHTCOUNCIL: 5, PHOTONCANNON: 2, TEMPLARARCHIVE: 4, DARKSHRINE: 4, ROBOTICSBAY: 4, ROBOTICSFACILITY: 3, HIGHTEMPLAR: 2, DARKTEMPLAR: 2, PHOENIX: 2.5, CARRIER: 3, WARPPRISM: 2, OBSERVER: 4, IMMORTAL: 2, ADEPT: 1, ORACLE: 1, TEMPEST: 2, DISRUPTOR: 1} # This should be situational, generalize for now
+		self.hr_buildPriorities = {PROBE: 1, NEXUS: 10, PYLON: 4, GATEWAY: 3, STARGATE: 3, ZEALOT: 1, SENTRY: 1, STALKER: 1, ASSIMILATOR: 3, CYBERNETICSCORE: 5, FORGE: 5, VOIDRAY: 2, COLOSSUS: 2, FLEETBEACON: 4, TWILIGHTCOUNCIL: 5, PHOTONCANNON: 2, TEMPLARARCHIVE: 4, DARKSHRINE: 4, ROBOTICSBAY: 4, ROBOTICSFACILITY: 3, HIGHTEMPLAR: 2, DARKTEMPLAR: 2, PHOENIX: 2.5, CARRIER: 3, WARPPRISM: 2, OBSERVER: 4, IMMORTAL: 2, ADEPT: 1, ORACLE: 1, TEMPEST: 2, DISRUPTOR: 1} # This should be situational, generalize for now
 		# Priority values for all upgrades
 		self.hr_upgradePriorities = {RESEARCH_PSISTORM:5, RESEARCH_WARPGATE: 5, RESEARCH_BLINK: 5, "DEFAULT": 5}
 
@@ -122,4 +122,4 @@ class Chevron:
 		with open('chevron_population.pkl', 'ab') as data:
 			pickle.dump(self, data, pickle.HIGHEST_PROTOCOL)
 
-		print("Committed " + self.name)
+		print("Committed " + self.name + " : " + str(self.score))
