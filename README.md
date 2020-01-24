@@ -11,10 +11,15 @@ Pylon's genetic algorithm adjusts these weights as heuristics of importance and 
 
 ## Instructions (Windows)
 Install StarCraft II at [https://starcraft2.com/en-us/](https://starcraft2.com/en-us/)
+
 Install python from [https://www.python.org/downloads/](https://www.python.org/downloads/). Pylon is tested and developed with 3.7.0. run 
+
 In command line, run `pip install sc2`
+
 Download the most recent version of this repository from the master branch
+
 Unzip the Ladder2019Season3.zip file into the `Maps` folder of your StarCraft II install location
+
 In `controller.py`, replace 
 ```python
 run_game(maps.get(random_map()), [
@@ -29,5 +34,7 @@ run_game(maps.get(random_map()), [
 		Bot(Race.Protoss, this_pylon)
 	], realtime=True)
 ```
+
 Change race with either `Human(Race.Terran)`, `Human(Race.Zerg)`, or `Human(Race.Protoss)`
+
 Navigate to your pylon-ai install directory in command line and run `python controller.py`
