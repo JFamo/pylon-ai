@@ -32,31 +32,19 @@ def set_pylon_heritage(pylon, n1, n2, s1, s2):
 
 def find_parents():
 
-	parent1 = None
-	parent2 = None
-	parent1_score = -1
-	parent2_score = -1
+	parents = []
+	chevrons = []
 
 	for chevron in population_chevrons('chevron_population.pkl'):
 
-		print(chevron.name + " : " + str(chevron.score))
+		chevrons.append(chevron)
 
-		if random.random() > 0.15:
+	scores = [chevron.score for chevron in chevrons]
 
-			if chevron.score > parent2_score:
-				parent2_score = chevron.score
-				parent2 = chevron
-
-			if chevron.score > parent1_score:
-				parent2 = parent1
-				parent2_score = parent1_score
-				parent1 = chevron
-				parent1_score = chevron.score
-
-	if parent1 == None or parent2 == None:
+	if len(chevrons) < 2:
 		return None
 	else:
-		return [parent1, parent2]
+		return random.choices(chevrons, weights=scores, k=2)
 
 def cull_population(culling_threshold):
 
@@ -172,7 +160,7 @@ def run_genetics():
 		default.copy_chevron(pylon)
 		set_pylon_heritage(pylon, default.name, "nonexistent", default.score, 0)
 
-	culling_threshold = 5000
+	culling_threshold = 25000
 	cull_population(culling_threshold)
 
 	pylon.print_heuristics()
