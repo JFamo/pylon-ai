@@ -7,7 +7,7 @@ except ModuleNotFoundError:
     import pickle
 
 from sc2 import run_game, maps, Race, Difficulty
-from sc2.player import Bot, Computer
+from sc2.player import Bot, Human, Computer
 from sc2.constants import *
 from main import Pylon_AI
 from chevron import Chevron
@@ -196,11 +196,10 @@ def mutate(num, dif, type):
 
 		return num + (n*((random.random() - 0.5) * num))
 
-while True:
 
-	this_pylon = run_genetics()
+this_pylon = run_genetics()
 
-	run_game(maps.get(random_map()), [
-			Bot(Race.Protoss, this_pylon),
-			Computer(random_race(), Difficulty.Hard)
-		], realtime=False)
+run_game(maps.get(random_map()), [
+		Human(Race.Terran),
+		Bot(Race.Protoss, this_pylon)
+	], realtime=True)
