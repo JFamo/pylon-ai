@@ -414,6 +414,7 @@ class Pylon_AI(sc2.BotAI):
 		self.armyUnits = None
 		self.pendingUpgrades = None
 
-		c = Chevron()
-		c.copy_pylon(self)
-		c.commit()
+		if game_result == Result.Victory or self.score > 30000:
+			c = Chevron()
+			c.copy_pylon(self)
+			c.commit()

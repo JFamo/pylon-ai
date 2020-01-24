@@ -162,7 +162,7 @@ def run_genetics():
 		default.copy_chevron(pylon)
 		set_pylon_heritage(pylon, default.name, "nonexistent", default.score, 0)
 
-	culling_threshold = 25000
+	culling_threshold = 10000
 	cull_population(culling_threshold)
 
 	pylon.print_heuristics()
@@ -202,5 +202,5 @@ while True:
 
 	run_game(maps.get(random_map()), [
 			Bot(Race.Protoss, this_pylon),
-			Computer(random_race(), Difficulty.Medium)
+			Computer(random_race(), Difficulty.Hard)
 		], realtime=False)
