@@ -140,7 +140,7 @@ class Pylon_AI(sc2.BotAI):
 
 		if unit==PROBE:
 			nexuses = self.units(NEXUS).ready.idle
-			if len(buildings) == 0:
+			if len(nexuses) == 0:
 				return False
 
 		return True
