@@ -97,10 +97,41 @@ class Pylon_AI(sc2.BotAI):
 
 	# Attempt to build by dequeuing from build plans if I can afford it
 	async def attempt_build(self):
+
 		if(len(self.buildPlans) > 0):
-			if(self.can_afford(self.buildPlans.peek())):
+
+			bypassed_builds = []
+			remaining_mins = self.minerals
+			remaining_gas = self.vespene
+
+			while(self.buildPlans.peek() and remaining_gas > 0 and remaining_mins > 0):
+
 				nextUnit = self.buildPlans.dequeue()
-				await self.build_unit(nextUnit)
+
+				if(self.can_afford(nextUnit) and nextUnit.cost.minerals <= remaining_mins and nextUnit.cost.vespene <= remaining_gas):
+
+					await self.build_unit(nextUnit)
+					break
+
+				else:
+
+					# If we can't afford, bypass it and decrease remaining resources
+					remaining_mins -= nextUnit.cost.minerals
+					remaining_gas -= nextUnit.cost.vespene
+					if remaining_mins < 0:
+						remaining_mins = 0
+					if remaining_gas < 0:
+						remaining_gas = 0
+					bypassed_builds.append(nextUnit)
+
+			# Requeue the things we couldn't afford
+			for unit in bypassed_builds:
+
+				self.buildPlans.enqueue(unit, self.hr_buildPriorities[unit])
+
+			del bypassed_builds
+			del remaining_gas
+			del remaining_mins
 
 	# Get accurate unit count by including build plans and pending
 	def getUnitCount(self, unit):
@@ -197,17 +228,9 @@ class Pylon_AI(sc2.BotAI):
 		# Escape case for misplaced pylons
 		if self.minerals > 750:
 
-			if self.supply_left > 20 and self.units(GATEWAY).ready.idle.amount > 0:
-
-				await self.build_unit(ZEALOT)
-
-			elif self.supply_cap < 200:
+			if self.supply_cap < 200:
 
 				await self.build_unit(PYLON)
-
-			for nexus in self.units(NEXUS).ready.idle:
-				
-				await self.build_unit(PROBE)
 
 		# Escape case for confusion
 		if self.minerals > 1000 and self.vespene > 1000:

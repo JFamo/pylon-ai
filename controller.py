@@ -196,10 +196,11 @@ def mutate(num, dif, type):
 
 		return num + (n*((random.random() - 0.5) * num))
 
+while True:	
 
-this_pylon = run_genetics()
+	this_pylon = run_genetics()
 
-run_game(maps.get(random_map()), [
-		Human(Race.Terran),
-		Bot(Race.Protoss, this_pylon)
-	], realtime=True)
+	run_game(maps.get(random_map()), [
+			Bot(Race.Protoss, this_pylon),
+			Computer(random_race(), Difficulty.Hard)
+		], realtime=False)
