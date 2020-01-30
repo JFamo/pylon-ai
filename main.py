@@ -102,14 +102,12 @@ class Pylon_AI(sc2.BotAI):
 		if(len(self.buildPlans) > 0):
 
 			bypassed_builds = []
-			remaining_mins = self.minerals
-			remaining_gas = self.vespene
 
-			while(self.buildPlans.peek() and remaining_gas >= 0 and remaining_mins >= 0):
+			while(self.buildPlans.peek()):
 
 				nextUnit = self.buildPlans.dequeue()
 
-				if(self.can_build(nextUnit) and self.cost_minerals(nextUnit) <= remaining_mins and self.cost_vespene(nextUnit) <= remaining_gas):
+				if(self.can_build(nextUnit)):
 
 					await self.build_unit(nextUnit)
 					break
@@ -117,8 +115,6 @@ class Pylon_AI(sc2.BotAI):
 				else:
 
 					# If we can't afford, bypass it and decrease remaining resources
-					remaining_mins -= self.cost_minerals(nextUnit)
-					remaining_gas -= self.cost_vespene(nextUnit)
 					bypassed_builds.append(nextUnit)
 
 			# Requeue the things we couldn't afford
@@ -130,8 +126,6 @@ class Pylon_AI(sc2.BotAI):
 					self.buildPlans.enqueue(unit, self.getUpgradePriority(unit))
 
 			del bypassed_builds
-			del remaining_gas
-			del remaining_mins
 
 	# See if we can build this unit now, ie afford it and have idle structures
 	def can_build(self, unit):
