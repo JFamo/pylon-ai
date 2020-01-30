@@ -14,6 +14,7 @@ from sc2.unit import Unit
 from sc2.units import Units
 from sc2.unit_command import UnitCommand
 from sc2.ids.upgrade_id import UpgradeId
+from typing import Union
 
 class Pylon_AI(sc2.BotAI):
 
@@ -104,11 +105,11 @@ class Pylon_AI(sc2.BotAI):
 			remaining_mins = self.minerals
 			remaining_gas = self.vespene
 
-			while(self.buildPlans.peek() and remaining_gas > 0 and remaining_mins > 0):
+			while(self.buildPlans.peek() and remaining_gas >= 0 and remaining_mins >= 0):
 
 				nextUnit = self.buildPlans.dequeue()
 
-				if(self.can_afford(nextUnit) and nextUnit.cost.minerals <= remaining_mins and nextUnit.cost.vespene <= remaining_gas):
+				if(self.can_build(nextUnit) and self.cost_minerals(nextUnit) <= remaining_mins and self.cost_vespene(nextUnit) <= remaining_gas):
 
 					await self.build_unit(nextUnit)
 					break
@@ -116,22 +117,39 @@ class Pylon_AI(sc2.BotAI):
 				else:
 
 					# If we can't afford, bypass it and decrease remaining resources
-					remaining_mins -= nextUnit.cost.minerals
-					remaining_gas -= nextUnit.cost.vespene
-					if remaining_mins < 0:
-						remaining_mins = 0
-					if remaining_gas < 0:
-						remaining_gas = 0
+					remaining_mins -= self.cost_minerals(nextUnit)
+					remaining_gas -= self.cost_vespene(nextUnit)
 					bypassed_builds.append(nextUnit)
 
 			# Requeue the things we couldn't afford
 			for unit in bypassed_builds:
 
-				self.buildPlans.enqueue(unit, self.hr_buildPriorities[unit])
+				if isinstance(unit, UnitTypeId):
+					self.buildPlans.enqueue(unit, self.hr_buildPriorities[unit])
+				else:
+					self.buildPlans.enqueue(unit, self.getUpgradePriority(unit))
 
 			del bypassed_builds
 			del remaining_gas
 			del remaining_mins
+
+	# See if we can build this unit now, ie afford it and have idle structures
+	def can_build(self, unit):
+
+		if not self.can_afford(unit):
+			return False
+
+		if unit in self.hr_upgradeTime:
+			buildings = self.units(self.hr_upgradeTime[unit][0]).ready.idle
+			if len(buildings) == 0:
+				return False
+
+		if unit==PROBE:
+			nexuses = self.units(NEXUS).ready.idle
+			if len(buildings) == 0:
+				return False
+
+		return True
 
 	# Get accurate unit count by including build plans and pending
 	def getUnitCount(self, unit):
@@ -299,6 +317,7 @@ class Pylon_AI(sc2.BotAI):
 			await self.build(STARGATE, near=self.units(PYLON).ready.random)
 		if(unit == NEXUS):
 			await self.expand_now()
+		# Handle units
 		if unit in self.hr_unitRatio:
 			structures = self.units(self.build_structures[unit]).ready.idle
 			if structures:
@@ -429,6 +448,29 @@ class Pylon_AI(sc2.BotAI):
 	def get_robotics_multiplier(self):
 
 		return self.hr_static['roboticsConstant'] + (self.hr_static['roboticsCoeffecient'] * (self.units(NEXUS).amount - 1))
+
+	# Get cost object for unit
+	def get_cost(self, item_id: Union[UnitTypeId, UpgradeId, AbilityId]):
+
+		if isinstance(item_id, UnitTypeId):
+			unit = self._game_data.units[item_id.value]
+			cost = self._game_data.calculate_ability_cost(unit.creation_ability)
+		elif isinstance(item_id, UpgradeId):
+			cost = self._game_data.upgrades[item_id.value].cost
+		else:
+			cost = self._game_data.calculate_ability_cost(item_id)
+
+		return cost
+
+	# Return mineral cost of unit
+	def cost_minerals(self, item_id: Union[UnitTypeId, UpgradeId, AbilityId]):
+
+		return self.get_cost(item_id).minerals
+
+	# Return mineral cost of unit
+	def cost_vespene(self, item_id: Union[UnitTypeId, UpgradeId, AbilityId]):
+
+		return self.get_cost(item_id).vespene
 
 	# On end of game, save to population
 	def on_end(self, game_result):

@@ -2,9 +2,9 @@ import sc2
 import random
 import os.path
 try:
-    import cPickle as pickle
+	import cPickle as pickle
 except ModuleNotFoundError:
-    import pickle
+	import pickle
 
 from sc2 import run_game, maps, Race, Difficulty
 from sc2.player import Bot, Human, Computer
