@@ -65,6 +65,13 @@ class Pylon_AI(sc2.BotAI):
 		self.build_structures[HIGHTEMPLAR] = GATEWAY
 		self.build_structures[DARKTEMPLAR] = GATEWAY
 
+		# Locations
+		self.me_armyLocation = None
+		self.me_target = None
+		self.enemy_armyLocation = None
+		self.enemy_target = None
+		self.scout = None
+
 	# Print my heuristics
 	def print_heuristics(self):
 		print(str(self.hr_static))
@@ -93,7 +100,7 @@ class Pylon_AI(sc2.BotAI):
 			await self.amass()
 		if(int(self.time) % 3 == 0) and self.supply_army > 0:
 			await self.attack()
-		if(int(self.time) % 180 == 0) and self.known_enemy_structures.amount == 0:
+		if(int(self.time) % 5 == 0):
 			await self.scout()
 
 	# Attempt to build by dequeuing from build plans if I can afford it
@@ -135,6 +142,11 @@ class Pylon_AI(sc2.BotAI):
 
 		if unit in self.hr_upgradeTime:
 			buildings = self.units(self.hr_upgradeTime[unit][0]).ready.idle
+			if len(buildings) == 0:
+				return False
+
+		if unit in self.build_structures:
+			buildings = self.units(self.build_structures[unit]).ready.idle
 			if len(buildings) == 0:
 				return False
 
@@ -393,27 +405,38 @@ class Pylon_AI(sc2.BotAI):
 	# Method to scout expansion locations if we don't see an enemy
 	async def scout(self):
 
-		if self.known_enemy_structures.amount == 0:
+		if scoutProbe == None or scoutProbe.is_idle:
 
-			if self.units(PROBE).amount != 0:
+			scoutProbe = get_scout()
 
-				haveScout = False
+			if scoutProbe:
 
-				for probe in self.units(PROBE):
-
-					if probe.is_attacking:
-
-						haveScout = True
-
-				if not haveScout:
-
-					scoutProbe = self.units(PROBE).first
+				if self.known_enemy_structures.amount == 0:
 
 					await self.do(scoutProbe.attack(self.enemy_start_locations[0], True))
 
 					for base in self.expansion_locations:
 
 						await self.do(scoutProbe.attack(base, True))
+
+				elif self.known_enemy_units.not_structure.amount == 0:
+
+					for loops in range(10):
+
+						await self.do(scoutProbe.move(self.enemy_start_locations[0].to2.random_on_distance(loops * 5.0), True))
+
+	# Get probe scout and set if none
+	def get_scout(self):
+			
+		if self.units(PROBE).amount != 0 and self.scout == None:
+
+			self.scout = self.units(PROBE).first
+
+		elif self.units(PROBE).amount == 0:
+
+			self.scout = None
+
+		return self.scout
 
 	# Handler for activating unit abilities in combat
 	async def activate_abilities(self):
