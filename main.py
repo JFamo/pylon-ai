@@ -42,7 +42,7 @@ class Pylon_AI(sc2.BotAI):
 
 		# Local Vars
 		self.buildPlans = Queue()
-		self.armyUnits = {UnitTypeId.ZEALOT, UnitTypeId.SENTRY, UnitTypeId.STALKER, UnitTypeId.VOIDRAY, UnitTypeId.COLOSSUS, UnitTypeId.HIGHTEMPLAR, UnitTypeId.DARKTEMPLAR, UnitTypeId.PHOENIX, UnitTypeId.CARRIER, UnitTypeId.DISRUPTOR, UnitTypeId.WARPPRISM, UnitTypeId.OBSERVER, UnitTypeId.IMMORTAL, UnitTypeId.ARCHON, UnitTypeId.ADEPT, UnitTypeId.ORACLE, UnitTypeId.TEMPEST}
+		self.armyUnits = {UnitTypeId.ZEALOT, UnitTypeId.SENTRY, UnitTypeId.STALKER, UnitTypeId.VOIDRAY, UnitTypeId.COLOSSUS, UnitTypeId.HIGHTEMPLAR, UnitTypeId.DARKTEMPLAR, UnitTypeId.PHOENIX, UnitTypeId.CARRIER, UnitTypeId.DISRUPTOR, UnitTypeId.WARPPRISM, UnitTypeId.OBSERVER, UnitTypeId.IMMORTAL, UnitTypeId.ARCHON, UnitTypeId.ADEPT, UnitTypeId.ORACLE, UnitTypeId.TEMPEST, UnitTypeId.MARINE, UnitTypeId.MARAUDER, UnitTypeId.MEDIVAC, UnitTypeId.GHOST, UnitTypeId.REAPER, UnitTypeId.VIKING, UnitTypeId.LIBERATOR, UnitTypeId.RAVEN, UnitTypeId.BATTLECRUISER, UnitTypeId.SIEGETANK, UnitTypeId.HELLION, UnitTypeId.CYCLONE, UnitTypeId.THOR, UnitTypeId.WIDOWMINE, UnitTypeId.ZERGLING, UnitTypeId.ROACH, UnitTypeId.RAVAGER, UnitTypeId.HYDRALISK, UnitTypeId.MUTALISK, UnitTypeId.BANELING, UnitTypeId.ULTRALISK, UnitTypeId.BROODLORD, UnitTypeId.CORRUPTOR, UnitTypeId.SWARMHOSTMP, UnitTypeId.INFESTOR, UnitTypeId.VIPER}
 		self.pendingUpgrades = []
 		self.score = 0
 
@@ -70,7 +70,7 @@ class Pylon_AI(sc2.BotAI):
 		self.me_target = None
 		self.enemy_armyLocation = None
 		self.enemy_target = None
-		self.scout = None
+		self.me_scout = None
 
 	# Print my heuristics
 	def print_heuristics(self):
@@ -100,7 +100,7 @@ class Pylon_AI(sc2.BotAI):
 			await self.amass()
 		if(int(self.time) % 3 == 0) and self.supply_army > 0:
 			await self.attack()
-		if(int(self.time) % 5 == 0):
+		if(int(self.time) % 15 == 0):
 			await self.scout()
 
 	# Attempt to build by dequeuing from build plans if I can afford it
@@ -405,9 +405,15 @@ class Pylon_AI(sc2.BotAI):
 	# Method to scout expansion locations if we don't see an enemy
 	async def scout(self):
 
-		if scoutProbe == None or scoutProbe.is_idle:
+		print(self.me_scout)
 
-			scoutProbe = get_scout()
+		if self.me_scout not in self.units(PROBE):
+
+			self.me_scout = None
+
+		if self.me_scout == None or self.me_scout.is_idle:
+
+			scoutProbe = self.get_scout()
 
 			if scoutProbe:
 
@@ -415,28 +421,31 @@ class Pylon_AI(sc2.BotAI):
 
 					await self.do(scoutProbe.attack(self.enemy_start_locations[0], True))
 
-					for base in self.expansion_locations:
+					await self.scout_expansions(scoutProbe)
 
-						await self.do(scoutProbe.attack(base, True))
+				elif self.known_enemy_units.amount < 5:
 
-				elif self.known_enemy_units.not_structure.amount == 0:
-
-					for loops in range(10):
-
-						await self.do(scoutProbe.move(self.enemy_start_locations[0].to2.random_on_distance(loops * 5.0), True))
+					await self.scout_expansions(scoutProbe)
 
 	# Get probe scout and set if none
 	def get_scout(self):
 			
-		if self.units(PROBE).amount != 0 and self.scout == None:
+		if self.units(PROBE).amount != 0 and self.me_scout == None:
 
-			self.scout = self.units(PROBE).first
+			self.me_scout = self.units(PROBE).first
 
 		elif self.units(PROBE).amount == 0:
 
-			self.scout = None
+			self.me_scout = None
 
-		return self.scout
+		return self.me_scout
+
+	# Scout all expansion locations
+	async def scout_expansions(self, unit):
+
+		for base in self.expansion_locations:
+
+			await self.do(unit.move(base, True))
 
 	# Handler for activating unit abilities in combat
 	async def activate_abilities(self):

@@ -39,7 +39,7 @@ def find_parents():
 
 		chevrons.append(chevron)
 
-	scores = [chevron.score for chevron in chevrons]
+	scores = [(chevron.score * chevron.score) for chevron in chevrons]
 
 	if len(chevrons) < 2:
 		return None
@@ -162,7 +162,7 @@ def run_genetics():
 		default.copy_chevron(pylon)
 		set_pylon_heritage(pylon, default.name, "nonexistent", default.score, 0)
 
-	culling_threshold = 10000
+	culling_threshold = 15000
 	cull_population(culling_threshold)
 
 	pylon.print_heuristics()
